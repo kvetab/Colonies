@@ -23,7 +23,8 @@ def run_cnn():
     # dimension would be 3
     x_shaped = tf.reshape(x, [-1, 98, 98, 3])
     # now declare the output data placeholder - what is this going to be? Nothing, probably...
-    y = tf.placeholder(tf.float32, [None, 10])      #do I need this?
+    #y = tf.placeholder(tf.float32, [None, 10])
+    y = tf.placeholder(tf.float32)      #or can it be an integer??
 
     # create some convolutional layers
     layer1, s1 = create_new_conv_layer(x_shaped, 1, 15, [5, 5], [2, 2], 1, name='layer1')
@@ -69,7 +70,8 @@ def run_cnn():
     #changed cross_entropy to error
 
     # define an accuracy assessment operation
-    correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+    #correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+    correct_prediction = tf.equal(y, y_pred)
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
     # setup the initialisation operator
@@ -77,10 +79,13 @@ def run_cnn():
 
     # setup recording variables
     # add a summary to store the accuracy
+    """
     tf.summary.scalar('accuracy', accuracy)
 
     merged = tf.summary.merge_all()
-    writer = tf.summary.FileWriter('C:\\Users\\Andy\\PycharmProjects')
+    writer = tf.summary.FileWriter('C:\\Users\\Kiki\\PycharmProjects')
+    """
+
     with tf.Session() as sess:
         # initialise the variables
         sess.run(init_op)
@@ -93,11 +98,11 @@ def run_cnn():
                 avg_cost += c / total_batch
             test_acc = sess.run(accuracy, feed_dict={x: inputData.test.images, y: inputData.test.labels})
             print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost), " test accuracy: {:.3f}".format(test_acc))
-            summary = sess.run(merged, feed_dict={x: inputData.test.images, y: inputData.test.labels})
-            writer.add_summary(summary, epoch)
+            #summary = sess.run(merged, feed_dict={x: inputData.test.images, y: inputData.test.labels})
+            #writer.add_summary(summary, epoch)
 
         print("\nTraining complete!")
-        writer.add_graph(sess.graph)
+        #writer.add_graph(sess.graph)
         print(sess.run(accuracy, feed_dict={x: inputData.test.images, y: inputData.test.labels}))
 # changed all uses of mnist to inputData - will have to make same functionalitu for loading dats
 
