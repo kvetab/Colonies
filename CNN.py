@@ -83,7 +83,7 @@ def run_cnn():
     tf.summary.scalar('accuracy', accuracy)
 
     merged = tf.summary.merge_all()
-    writer = tf.summary.FileWriter('C:\\Users\\Kiki\\PycharmProjects')
+    writer = tf.summary.FileWriter('C:\\Users\\Andy\\PycharmProjects')
     """
 
     with tf.Session() as sess:
