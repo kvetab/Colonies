@@ -16,7 +16,7 @@ def run_cnn():
 
     # declare the training data placeholders
     # input x - probably sth like 98 x 98 pixels??
-    x = tf.placeholder(tf.float32, [None, 9604])
+    x = tf.placeholder(tf.float32, [None, 9604])        # 9604 is just 98*98, not regarding 3 color dimensions...
     # reshape the input data so that it is a 4D tensor.  The first value (-1) tells function to dynamically shape that
     # dimension based on the amount of data passed to it.  The two middle dimensions are set to the image size (i.e. 98
     # x 98).  The final dimension is 1 as there is only a single colour channel i.e. grayscale.  If this was RGB, this
