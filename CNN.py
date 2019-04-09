@@ -12,28 +12,29 @@ def run_cnn():
     # Python optimisation variables
     learning_rate = 0.0001
     epochs = 10
-    batch_size = 50
+    batch_size = 8
 
     # declare the training data placeholders
     # input x - probably sth like 98 x 98 pixels??
-    x = tf.placeholder(tf.float32, [None, 9604])        # 9604 is just 98*98, not regarding 3 color dimensions...
+    x = tf.placeholder(tf.float32, [None, 28812])        # 9604 is just 98*98, not regarding 3 color dimensions... -> 28812
     # reshape the input data so that it is a 4D tensor.  The first value (-1) tells function to dynamically shape that
     # dimension based on the amount of data passed to it.  The two middle dimensions are set to the image size (i.e. 98
     # x 98).  The final dimension is 1 as there is only a single colour channel i.e. grayscale.  If this was RGB, this
     # dimension would be 3
     x_shaped = tf.reshape(x, [-1, 98, 98, 3])
     # now declare the output data placeholder - what is this going to be? Nothing, probably...
-    #y = tf.placeholder(tf.float32, [None, 10])
-    y = tf.placeholder(tf.float32)      #or can it be an integer??
+    y = tf.placeholder(tf.float32, [None, 10])
+    #y = tf.placeholder(tf.float32)      #or can it be an integer??
 
     # create some convolutional layers
     layer1, s1 = create_new_conv_layer(x_shaped, 1, 15, [5, 5], [2, 2], 1, name='layer1')
-    # 15 filters... is that right?
+    # input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, name
+    # what happens to the 3 color dimensions? Is the output really 15 channels, or 3*15?
     layer2, s2 = create_new_conv_layer(layer1, 15, 30, [5, 5], [2, 2], 2, name='layer2')
     # and here?
     # what am I actually returning with the s1,2,3..?
 
-    #another convolution added:
+    # another convolution added:
     layer3, s3 = create_new_conv_layer(layer2, 30, 40, [5, 5], [1,1], 2, name='layer3')  # no pooling
 
     # flatten the output ready for the fully connected output stage - after two layers of stride 2 pooling, we go
@@ -59,7 +60,7 @@ def run_cnn():
     y_ = tf.nn.softmax(dense_layer2)
     """
 
-    cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=dense_layer2, labels=y))
+    #cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=dense_layer2, labels=y))
     #maybe I don't need this??
     #instead:
     y_pred = s1 + s2 + s3
@@ -125,6 +126,7 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
 
     sum_ = tf.math_ops.reduce_sum(out_layer)
     # what happens here to the dynamically changed dimension??
+    # !!!
 
     # apply a ReLU non-linear activation
     out_layer = tf.nn.relu(out_layer)
