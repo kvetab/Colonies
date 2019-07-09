@@ -21,4 +21,4 @@ def ChangeDir():
         if filename.endswith(".jpg"):
             ChangeImage(directory + filename)
 
-ChangeImage("agar6.png")
+ChangeImage("PICT9572.jpg")

@@ -87,4 +87,4 @@ def SaveToFile(col, filename):
 
 colonies = 0
 coords = openImage()
-SaveToFile(coords, "coords9570.csv")
+SaveToFile(coords, "coords9572.csv")

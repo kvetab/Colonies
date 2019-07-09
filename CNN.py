@@ -95,7 +95,8 @@ def run_cnn():
             avg_cost = 0
             for i in range(total_batch):
                 batch_x, batch_y = inputData.train.next_batch(batch_size=batch_size)
-                _, c = sess.run([optimiser, cross_entropy], feed_dict={x: batch_x, y: batch_y})
+                _, c = sess.run([optimiser, error], feed_dict={x: batch_x, y: batch_y})
+                # changed cross_entropy to error
                 avg_cost += c / total_batch
             test_acc = sess.run(accuracy, feed_dict={x: inputData.test.images, y: inputData.test.labels})
             print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost), " test accuracy: {:.3f}".format(test_acc))
