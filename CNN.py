@@ -7,7 +7,7 @@ import math
 
 def run_cnn():
     #mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-    inputData = CNNutils.LoadInput()
+    inputData = CNNutils.LoadInput("outPICT9563.txt", "labPICT9563.txt")
 
     # Python optimisation variables
     learning_rate = 0.0001
@@ -27,9 +27,10 @@ def run_cnn():
     #y = tf.placeholder(tf.float32)      #or can it be an integer??
 
     # create some convolutional layers
-    layer1, s1 = create_new_conv_layer(x_shaped, 1, 15, [5, 5], [2, 2], 1, name='layer1')
+    layer1, s1 = create_new_conv_layer(x_shaped, 3, 15, [5, 5], [2, 2], 1, name='layer1')
     # input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, name
     # what happens to the 3 color dimensions? Is the output really 15 channels, or 3*15?
+    # changed input_channels to 3 (RGB)
     layer2, s2 = create_new_conv_layer(layer1, 15, 30, [5, 5], [2, 2], 2, name='layer2')
     # and here?
     # what am I actually returning with the s1,2,3..?
@@ -65,6 +66,7 @@ def run_cnn():
     #instead:
     y_pred = s1 + s2 + s3
     error = math.pow((y - y_pred), 2)
+    # TypeError: must be real number, not Tensor
 
     # add an optimiser
     optimiser = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(error)
@@ -117,15 +119,18 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
     #decreased SD
     weights = tf.Variable(tf.truncated_normal(conv_filt_shape, stddev=0.01), name=name+'_W')
     bias = tf.Variable(tf.truncated_normal([num_filters]), name=name+'_b')
+    # left the same as in tutorial - do I need to change it?
 
     # setup the convolutional layer operation
     out_layer = tf.nn.conv2d(input_data, weights, [1, stride, stride, 1], padding='VALID')
+    # changed 1 in brackets with strides to 3 - channels?
     #changed padding - was that right??
 
     # add the bias
     out_layer += bias
 
-    sum_ = tf.math_ops.reduce_sum(out_layer)
+    # sum_ = tf.math.reduce_sum(out_layer)  # Why does this not work?
+    sum_ = tf.reduce_sum(out_layer)
     # what happens here to the dynamically changed dimension??
     # !!!
 

@@ -52,7 +52,7 @@ def LoadInput(file_data, file_labels):
 
 # define inputData.train.next_batch(batch_size=batch_size)
 
-
-data = LoadInput("outPICT9563.txt", "labPICT9563.txt")
-pokus = data.test.images
-i = 1
+if __name__ == "__main__":
+    data = LoadInput("outPICT9563.txt", "labPICT9563.txt")
+    pokus = data.test.images
+    i = 1
