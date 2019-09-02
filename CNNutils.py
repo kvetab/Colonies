@@ -31,14 +31,14 @@ def LoadInput(file_data, file_labels):
                 # Shuffle the data
                 perm = np.arange(self._num_examples)
                 np.random.shuffle(perm)
-                self._images = self._images[perm]
-                self._labels = self._labels[perm]
+                self.images = self.images[perm]
+                self.labels = self.labels[perm]
                 # Start next epoch
                 start = 0
                 self._index_in_epoch = batch_size
                 assert batch_size <= self._num_examples
             end = self._index_in_epoch
-            return self._images[start:end], self._labels[start:end]
+            return self.images[start:end], self.labels[start:end]
 
     class input_data:
         def __init__(self, xtrain, ytrain, xtest, ytest):

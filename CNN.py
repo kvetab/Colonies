@@ -22,9 +22,9 @@ def run_cnn():
     # x 98).  The final dimension is 1 as there is only a single colour channel i.e. grayscale.  If this was RGB, this
     # dimension would be 3
     x_shaped = tf.reshape(x, [-1, 98, 98, 3])
-    # now declare the output data placeholder - what is this going to be? Nothing, probably...
-    y = tf.placeholder(tf.float32, [None, 10])
-    #y = tf.placeholder(tf.float32)      #or can it be an integer??
+    # now declare the output data placeholder - what is this going to be?
+    #y = tf.placeholder(tf.float32, [None, 10])
+    y = tf.placeholder(tf.float32, [None, ])      #or can it be an integer??
 
     # create some convolutional layers
     layer1, s1 = create_new_conv_layer(x_shaped, 3, 15, [5, 5], [2, 2], 1, name='layer1')
@@ -65,7 +65,9 @@ def run_cnn():
     #maybe I don't need this??
     #instead:
     y_pred = s1 + s2 + s3
-    error = math.pow((y - y_pred), 2)
+    #y_ = tf.Variable(y)
+    #error = tf.math.square(y - y_pred)
+    error = tf.pow((y - y_pred), 2)
     # TypeError: must be real number, not Tensor
 
     # add an optimiser
@@ -101,7 +103,9 @@ def run_cnn():
                 # changed cross_entropy to error
                 avg_cost += c / total_batch
             test_acc = sess.run(accuracy, feed_dict={x: inputData.test.images, y: inputData.test.labels})
-            print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost), " test accuracy: {:.3f}".format(test_acc))
+            #print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost), " test accuracy:", "{:.3f}".format(test_acc))
+            print("Epoch: ", str((epoch + 1)), "cost = ", str(avg_cost), "test accuracy: ", str(test_acc))
+            # ZDE KONEC KROKOVANI
             #summary = sess.run(merged, feed_dict={x: inputData.test.images, y: inputData.test.labels})
             #writer.add_summary(summary, epoch)
 
