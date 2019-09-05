@@ -26,9 +26,11 @@ def CreateNSamples(n, imgfile, coordsf):
     for i in range(n):
         x = random.randint(0,h-65)
         y = random.randint(0,w-65)
-        size = random.randint(60,240)
-        while x+size > h or y+size > w:
-            size = random.randint(60,240)
+        #size = random.randint(60,240)
+        size = 98
+        # what??
+        #while x+size > h or y+size > w:
+            #size = random.randint(60,240)
         square, label = GetSquare(img, coords, x, y, size)
         sample = square.reshape(28812)
         samples.append(sample)
@@ -85,16 +87,18 @@ def GetSquare(img, coords, x, y, size):
     sq = np.array(im)
     i = 0
     count = 0
-    while coords[i][0] < x:
+    soucasne_x = coords[i][0]
+    while soucasne_x < x:
         i+=1
-    while coords[i][0] >= x and coords[i][0] <= x+size:
+        soucasne_x = coords[i][0]
+    while i < len(coords) and coords[i][0] >= x and coords[i][0] <= x+size:
         if coords[i][1] >= y and coords[i][1] <= y + size and coords[i][2] == 1:
             count += 1
         i += 1
     return sq, count
     # I'm confused how the x and y coords should be... -> probably right now
 
-CreateNSamples(30, "PICT9566.png", "coords9566.csv")
+CreateNSamples(40, "PICT9569.png", "coords9569.csv")
 #CreateSpecifSample(600, 135, 110, "PICT9563.png", "coords9563.csv")
 
 """
