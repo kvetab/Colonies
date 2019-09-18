@@ -36,6 +36,7 @@ def openImage():
         arr = np.array(img2)
         # arr = arr.astype(int)
 
+
 #        num = input('Enter image number.')
 #        imgnum = int(num)
 #        posneg = input('Positive or negative examples? 1/0')
@@ -47,6 +48,19 @@ def openImage():
 
         canvas.create_image(0, 0, image=img, anchor="nw")
         canvas.config(scrollregion=canvas.bbox(ALL))
+
+        #coord_file = File.replace("PICT", "coords").replace("png", "csv")
+        coord_file = "coords9574.csv"
+        try:
+            coord_list = CreateData.LoadCoords(coord_file, "coords/")
+            for c in coord_list:
+                x = c[0]
+                y = c[1]
+                if c[2] == 1:
+                    canvas.create_line(x - 4, y - 4, x + 4, y + 4, fill="blue", width=2)
+                    canvas.create_line(x - 4, y + 4, x + 4, y - 4, fill="blue", width=2)
+        except:
+            pass
 
         # function to be called when mouse is clicked
         def printcoordsPos(event):
@@ -109,6 +123,6 @@ def ShowCoords(img_file, coord_file):
 
 if __name__ == "__main__":
     colonies = 0
-    #coords = openImage()
-    #SaveToFile(coords, "coords9564.csv", "coords/")
-    ShowCoords("PICT9569.png", "coords9569.csv")
+    coords = openImage()
+    SaveToFile(coords, "coords9574.csv", "coords/")
+    #ShowCoords("PICT9574.png", "coords9574.csv")
