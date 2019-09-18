@@ -44,25 +44,8 @@ def run_cnn():
     flattened = tf.reshape(layer2, [-1, 4 * 4 * 40])
     # hopefully the result is really 4 x 4...
 
-# I don't really need this, do I..
-    """
-    # fully connected layer
-    # setup some weights and bias values for this layer, then activate with ReLU
-    wd1 = tf.Variable(tf.truncated_normal([4 * 4 * 30, 1000], stddev=0.03), name='wd1')
-    # how many nodes?
-    bd1 = tf.Variable(tf.truncated_normal([1000], stddev=0.01), name='bd1')
-    dense_layer1 = tf.matmul(flattened, wd1) + bd1
-    dense_layer1 = tf.nn.relu(dense_layer1)
-
-    # another layer with softmax activations
-    wd2 = tf.Variable(tf.truncated_normal([1000, 10], stddev=0.03), name='wd2')
-    bd2 = tf.Variable(tf.truncated_normal([10], stddev=0.01), name='bd2')
-    dense_layer2 = tf.matmul(dense_layer1, wd2) + bd2
-    y_ = tf.nn.softmax(dense_layer2)
-    """
 
     #cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=dense_layer2, labels=y))
-    #maybe I don't need this??
     #instead:
     y_pred = s1 + s2 + s3
     #y_ = tf.Variable(y)
