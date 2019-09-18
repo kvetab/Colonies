@@ -1,8 +1,9 @@
 import  numpy as np
 from tkinter import *
 from tkinter.filedialog import askopenfilename
-from PIL import Image, ImageTk
+from PIL import Image, ImageDraw
 import csv
+import CreateData
 
 #opens images, gets examples from clicks on the image
 #left click for positive, right click for negative examples, middle button for undo
@@ -79,12 +80,35 @@ def openImage():
     print(colonies)
     return coords
 
-def SaveToFile(col, filename):
-    with open(filename, 'a') as f:
+def SaveToFile(col, filename, dct):
+    with open(dct+filename, 'a') as f:
         writer = csv.writer(f)
         for line in col:
             writer.writerow(line)
 
-colonies = 0
-coords = openImage()
-SaveToFile(coords, "coords9572.csv")
+def ShowCoords(img_file, coord_file):
+    # root = Tk()
+    # File = askopenfilename(parent=root, initialdir="M:/", title='Choose an image.')
+    # print("opening %s" % File)
+    # img = PhotoImage(file=File)
+    IMG_DCT = "photos_used/"
+    img = Image.open(IMG_DCT + img_file)
+    draw = ImageDraw.Draw(img)
+    COORDS_DCT = "coords/"
+    #COORDS_DCT = ""
+    coord_list = CreateData.LoadCoords(coord_file, COORDS_DCT)
+    for c in coord_list:
+        if c[2] == 1:
+            x = c[0]
+            y = c[1]
+            draw.line([(x-4, y-4), (x+4, y+4)], fill="green", width=2)
+            draw.line([(x-4, y+4), (x+4, y-4)], fill="green", width=2)
+    del draw
+    Image._show(img)
+
+
+if __name__ == "__main__":
+    colonies = 0
+    #coords = openImage()
+    #SaveToFile(coords, "coords9564.csv", "coords/")
+    ShowCoords("PICT9569.png", "coords9569.csv")

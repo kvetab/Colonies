@@ -3,31 +3,33 @@ import numpy as np
 from tensorflow.examples.tutorials.mnist import input_data
 import CNNutils
 import math
-
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def run_cnn():
     #mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
-    inputData = CNNutils.LoadInput("outPICT9563.txt", "labPICT9563.txt")
+    inputData = CNNutils.LoadInputIMG("labels/labels.csv")
 
     # Python optimisation variables
     learning_rate = 0.0001
-    epochs = 10
-    batch_size = 8
+    epochs = 200
+    batch_size = 16
 
     # declare the training data placeholders
     # input x - probably sth like 98 x 98 pixels??
-    x = tf.placeholder(tf.float32, [None, 28812])        # 9604 is just 98*98, not regarding 3 color dimensions... -> 28812
+    x = tf.placeholder(tf.float32, [None, 98, 98, 3])        # 9604 is just 98*98, not regarding 3 color dimensions... -> 28812
     # reshape the input data so that it is a 4D tensor.  The first value (-1) tells function to dynamically shape that
     # dimension based on the amount of data passed to it.  The two middle dimensions are set to the image size (i.e. 98
     # x 98).  The final dimension is 1 as there is only a single colour channel i.e. grayscale.  If this was RGB, this
     # dimension would be 3
-    x_shaped = tf.reshape(x, [-1, 98, 98, 3])
+    #x_shaped = tf.reshape(x, [-1, 98, 98, 3])
     # now declare the output data placeholder - what is this going to be?
     #y = tf.placeholder(tf.float32, [None, 10])
     y = tf.placeholder(tf.float32, [None, ])      #or can it be an integer??
 
     # create some convolutional layers
-    layer1, s1 = create_new_conv_layer(x_shaped, 3, 15, [5, 5], [2, 2], 1, name='layer1')
+    layer1, s1 = create_new_conv_layer(x, 3, 15, [5, 5], [2, 2], 1, name='layer1')
     # input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, name
     # what happens to the 3 color dimensions? Is the output really 15 channels, or 3*15?
     # changed input_channels to 3 (RGB)
@@ -38,29 +40,51 @@ def run_cnn():
     # another convolution added:
     layer3, s3 = create_new_conv_layer(layer2, 30, 40, [5, 5], [1,1], 2, name='layer3')  # no pooling
 
+
+
     # flatten the output ready for the fully connected output stage - after two layers of stride 2 pooling, we go
     # from 28 x 28, to 14 x 14 to 7 x 7 x,y co-ordinates, but with 64 output channels.  To create the fully connected,
     # "dense" layer, the new shape needs to be [-1, 7 x 7 x 64]
-    flattened = tf.reshape(layer2, [-1, 4 * 4 * 40])
+    flattened = tf.reshape(layer3, [-1, 4 * 4 * 40])
+
     # hopefully the result is really 4 x 4...
 
+# I don't really need this, do I..
+    """
+    # fully connected layer
+    # setup some weights and bias values for this layer, then activate with ReLU
+    wd1 = tf.Variable(tf.truncated_normal([4 * 4 * 30, 1000], stddev=0.03), name='wd1')
+    # how many nodes?
+    bd1 = tf.Variable(tf.truncated_normal([1000], stddev=0.01), name='bd1')
+    dense_layer1 = tf.matmul(flattened, wd1) + bd1
+    dense_layer1 = tf.nn.relu(dense_layer1)
+
+    # another layer with softmax activations
+    wd2 = tf.Variable(tf.truncated_normal([1000, 10], stddev=0.03), name='wd2')
+    bd2 = tf.Variable(tf.truncated_normal([10], stddev=0.01), name='bd2')
+    dense_layer2 = tf.matmul(dense_layer1, wd2) + bd2
+    y_ = tf.nn.softmax(dense_layer2)
+    """
 
     #cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=dense_layer2, labels=y))
+    #maybe I don't need this??
     #instead:
-    y_pred = s1 + s2 + s3
+    y_pred = s3
+    #y_pred = s1 + s2 + s3
     #y_ = tf.Variable(y)
     #error = tf.math.square(y - y_pred)
     error = tf.pow((y - y_pred), 2)
     # TypeError: must be real number, not Tensor
-
+    err_mean = tf.sqrt(tf.reduce_mean(error))
     # add an optimiser
     optimiser = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(error)
     #changed cross_entropy to error
 
     # define an accuracy assessment operation
     #correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-    correct_prediction = tf.equal(y, y_pred)
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    #correct_prediction = tf.equal(y, y_pred)
+    rmse = tf.pow((y - y_pred), 2)
+    accuracy = tf.sqrt(tf.reduce_mean(rmse))
 
     # setup the initialisation operator
     init_op = tf.global_variables_initializer()
@@ -80,22 +104,94 @@ def run_cnn():
         total_batch = int(len(inputData.train.labels) / batch_size)
         for epoch in range(epochs):
             avg_cost = 0
+            print("total_batch",total_batch)
             for i in range(total_batch):
                 batch_x, batch_y = inputData.train.next_batch(batch_size=batch_size)
-                _, c = sess.run([optimiser, error], feed_dict={x: batch_x, y: batch_y})
+                _, c = sess.run([optimiser, err_mean], feed_dict={x: batch_x, y: batch_y})
+
                 # changed cross_entropy to error
                 avg_cost += c / total_batch
-            test_acc = sess.run(accuracy, feed_dict={x: inputData.test.images, y: inputData.test.labels})
+            test_acc, y_solv, y_pred_solv = sess.run([accuracy, y, y_pred], feed_dict={x: inputData.test.images, y: inputData.test.labels})
             #print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost), " test accuracy:", "{:.3f}".format(test_acc))
-            print("Epoch: ", str((epoch + 1)), "cost = ", str(avg_cost), "test accuracy: ", str(test_acc))
+            print("Epoch: ", str((epoch + 1)), "cost = ", str( avg_cost), "test accuracy: ", str(test_acc))
+            print(list(zip(y_solv,y_pred_solv))[0:20])
+
+            if epoch % 20 == 0:
+                #LP: store trained filters into an image
+                getActivations(sess, layer1, inputData.test.images[4:8], x, epoch, "layer1")
+                getActivations(sess, layer2, inputData.test.images[4:8], x, epoch, "layer2")
+
+
+
+            #print(y_solv)
+            #print(y_pred_solv)
             # ZDE KONEC KROKOVANI
             #summary = sess.run(merged, feed_dict={x: inputData.test.images, y: inputData.test.labels})
             #writer.add_summary(summary, epoch)
 
         print("\nTraining complete!")
+        saver = tf.train.Saver()
+        save_path = saver.save(sess, "/model/model.ckpt")
+        print("Model saved in path: %s" % save_path)
+
         #writer.add_graph(sess.graph)
         print(sess.run(accuracy, feed_dict={x: inputData.test.images, y: inputData.test.labels}))
 # changed all uses of mnist to inputData - will have to make same functionalitu for loading dats
+
+
+def getActivations(sess, layer, stimuli, x, iter, labelname):
+    units = sess.run(layer, feed_dict={x: stimuli})
+    plotNNFilter(units, stimuli, iter, labelname)
+
+
+def plotNNFilter(units, stimuli, iter, labelname):
+    filters = units.shape[3]
+    images = units.shape[0]
+    #print(units.shape)
+    n_columns = images
+    n_rows = filters+1
+    fig, axes = plt.subplots(n_columns, n_rows, figsize=(n_rows*2, n_columns*2))
+
+    for i in range(filters):
+        for j in range(images):
+            #print(units[j, :, :, i].shape)
+            #print(stimuli[j].shape)
+            ax = sns.heatmap(units[j, :, :, i],
+                               cmap=matplotlib.cm.Greens,
+                               alpha=1.0,  # whole heatmap is translucent
+                               annot=False,
+                               zorder=2,
+                               yticklabels=False,
+                               xticklabels=False,
+                               ax=axes[j, i+1],
+                               cbar = False,
+                               linewidths=0.0
+                               )
+
+            # heatmap uses pcolormesh instead of imshow, so we can't pass through
+            # extent as a kwarg, so we can't mmatch the heatmap to the map. Instead,
+            # match the map to the heatmap:
+            ax.set_ylabel('')
+            ax.set_xlabel('')
+            """ax.imshow(stimuli[j],
+                        aspect=ax.get_aspect(),
+                        extent=ax.get_xlim() + ax.get_ylim(),
+                        interpolation="bilinear",
+                        zorder=1)  # put the map under the heatmap"""
+
+    for j in range(images):
+        axes[j, 0].imshow(stimuli[j],
+                          aspect=ax.get_aspect(),
+                          extent=ax.get_xlim() + ax.get_ylim(),
+                          interpolation="bilinear",
+                          #ax = axes[i+1, j],
+                          zorder=1)
+        axes[j, 0].set_ylabel('')
+        axes[j, 0].set_xlabel('')
+
+    fig.savefig("filters/"+str(iter)+"_"+str(labelname)+".png", dpi=150)
+    print("Labels saved")
+
 
 
 def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, name):
@@ -104,7 +200,7 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
 
     # initialise weights and bias for the filter
     #decreased SD
-    weights = tf.Variable(tf.truncated_normal(conv_filt_shape, stddev=0.01), name=name+'_W')
+    weights = tf.Variable(tf.truncated_normal(conv_filt_shape, stddev=0.001), name=name+'_W')
     bias = tf.Variable(tf.truncated_normal([num_filters]), name=name+'_b')
     # left the same as in tutorial - do I need to change it?
 
@@ -116,13 +212,18 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
     # add the bias
     out_layer += bias
 
-    # sum_ = tf.math.reduce_sum(out_layer)  # Why does this not work?
-    sum_ = tf.reduce_sum(out_layer)
-    # what happens here to the dynamically changed dimension??
-    # !!!
+
+    #LP: pred sectenim vystupu jsem je nechal prolozit pomoci sigmoidy - tedy da se to chapat jako pravdepodobnost,
+    # ze dany filter zachytil label. Zatim nevim nakolik je tahle uprava rozumna, ale vypada to, ze to vcelku funguje
+    sigmoid_layer = tf.nn.sigmoid(out_layer)
 
     # apply a ReLU non-linear activation
     out_layer = tf.nn.relu(out_layer)
+
+
+    #LP: presunul jsem po aplikaci RELU
+    # - tady je potreba zachovat prvni dimenzi, jinak se to snazi odhadnout velikost cele batche
+    sum_ = tf.reduce_sum(sigmoid_layer, axis=[1, 2, 3])
 
     # now perform max pooling
     # ksize is the argument which defines the size of the max pooling window (i.e. the area over which the maximum is
@@ -139,5 +240,9 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
 
     return out_layer, sum_
 
+
+
 if __name__ == "__main__":
+
+
     run_cnn()
