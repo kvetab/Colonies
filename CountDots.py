@@ -8,7 +8,7 @@ import CreateData
 #opens images, gets examples from clicks on the image
 #left click for positive, right click for negative examples, middle button for undo
 #enter filename manually...
-def openImage():
+def openImage(coord_file):
     event2canvas = lambda e, c: (c.canvasx(e.x), c.canvasy(e.y))
     # if __name__ == "__main__":
     if (True):
@@ -49,16 +49,19 @@ def openImage():
         canvas.create_image(0, 0, image=img, anchor="nw")
         canvas.config(scrollregion=canvas.bbox(ALL))
 
+        mark_size = 3
+        mark_width = 2
+
         #coord_file = File.replace("PICT", "coords").replace("png", "csv")
-        coord_file = "coords9574.csv"
+        #coord_file = "coords9575.csv"
         try:
             coord_list = CreateData.LoadCoords(coord_file, "coords/")
             for c in coord_list:
                 x = c[0]
                 y = c[1]
                 if c[2] == 1:
-                    canvas.create_line(x - 4, y - 4, x + 4, y + 4, fill="blue", width=2)
-                    canvas.create_line(x - 4, y + 4, x + 4, y - 4, fill="blue", width=2)
+                    canvas.create_line(x - mark_size, y - mark_size, x + mark_size, y + mark_size, fill="blue", width=mark_width)
+                    canvas.create_line(x - mark_size, y + mark_size, x + mark_size, y - mark_size, fill="blue", width=mark_width)
         except:
             pass
 
@@ -68,14 +71,15 @@ def openImage():
             global  colonies
             colonies += 1
             cx, cy = event2canvas(event, canvas)
-            canvas.create_line(cx - 4, cy - 4, cx + 4, cy + 4, fill="#2E8B57", width=3)
-            canvas.create_line(cx - 4, cy + 4, cx + 4, cy - 4, fill="#2E8B57", width=3)
+            color = "#32b33b"
+            canvas.create_line(cx - mark_size, cy - mark_size, cx + mark_size, cy + mark_size, fill=color, width=mark_width)
+            canvas.create_line(cx - mark_size, cy + mark_size, cx + mark_size, cy - mark_size, fill=color, width=mark_width)
             coords.append((cx, cy, 1))
 
         def printcoordsNeg(event):
             cx, cy = event2canvas(event, canvas)
-            canvas.create_line(cx - 4, cy - 4, cx + 4, cy + 4, fill="#ed9121", width=3)
-            canvas.create_line(cx - 4, cy + 4, cx + 4, cy - 4, fill="#ed9121", width=3)
+            canvas.create_line(cx - mark_size, cy - mark_size, cx + mark_size, cy + mark_size, fill="#ed9121", width=mark_width)
+            canvas.create_line(cx - mark_size, cy + mark_size, cx + mark_size, cy - mark_size, fill="#ed9121", width=mark_width)
             coords.append((cx, cy, 0))
 
         def Undo(Event=None):
@@ -86,8 +90,8 @@ def openImage():
 
         # mouseclick event
         canvas.bind("<ButtonPress-1>", printcoordsPos)
-        canvas.bind("<ButtonPress-3>",printcoordsNeg)
-        canvas.bind_all('<ButtonPress-2>', Undo)
+        canvas.bind("<ButtonPress-3>",Undo)
+        canvas.bind_all('<ButtonPress-2>', printcoordsNeg)
 
     root.mainloop()
 
@@ -123,6 +127,7 @@ def ShowCoords(img_file, coord_file):
 
 if __name__ == "__main__":
     colonies = 0
-    coords = openImage()
-    SaveToFile(coords, "coords9574.csv", "coords/")
-    #ShowCoords("PICT9574.png", "coords9574.csv")
+    filename = "coords9621.csv"
+    coords = openImage( filename)
+    SaveToFile(coords, filename, "coords/")
+    #ShowCoords("PICT20190923_151150.png", "coords20190923_151150.csv")
