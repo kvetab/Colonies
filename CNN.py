@@ -7,8 +7,9 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import csv
 
-def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters):
+def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum):
     inputData = CNNutils.LoadInputIMG("labels/labels.csv")
 
     # Python optimisation variables
@@ -20,8 +21,9 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
     batch_size = batches
 
     # filter number settings
-    choices = {'a': (5, 10, 15), 'b': (10, 20, 30), 'c': (15, 30, 40)}
-    (f1, f2, f3) = choices.get(filter_num, ('default1', 'default2', 'default3'))
+    (f1, f2, f3) = filter_num
+    if split_filters:
+        (f1, f2, f3) = (int(f1/2), int(f2/2), int(f3))
 
     # declare the training data placeholders
     x = tf.placeholder(tf.float32, [None, 98, 98, 3])        # 98*98 plus 3 color dimensions... -> 28812
@@ -40,14 +42,12 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
         s2 = create_conv_layer_for_sum(layer1, f1, f2, [5, 5], 2, outf_sum, name='s_layer2')
 
     # another convolution added:
-    layer3, s3 = create_new_conv_layer(layer2, f2, f3, [5, 5], [1,1], 2, outf_layer, name='layer3')  # no pooling
-    if split_filters:
-        s3 = create_conv_layer_for_sum(layer2, f2, f3, [5, 5], 2, outf_sum, name='s_layer3')
+    s3 = create_conv_layer_for_sum(layer2, f2, f3, [5, 5], 2, outf_sum, name='s_layer3')
 
 
 
     # prediction:
-    y_pred = s3
+    y_pred = tf.multiply(s1, which_sum[0]) + tf.multiply(s2, which_sum[1]) + tf.multiply(s3, which_sum[2])
     #y_pred = s1 + s2 + s3
     # option to add different sums (all/some layers)
     error = tf.pow((y - y_pred), 2)
@@ -62,6 +62,7 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
     #correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     #correct_prediction = tf.equal(y, y_pred)
     rmse = tf.pow((y - y_pred), 2)      # same as error
+    # pri krokovani se mi zda, ze to ma jinou hodnotu nez error, ackoli se to pocita stejne
     accuracy = tf.sqrt(tf.reduce_mean(rmse))    # same as err_mean
     abs_err_mean = tf.reduce_mean(abs_error)
 
@@ -105,6 +106,11 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
         num = timer.timestamp()
         save_path = saver.save(sess, "models/model"+str(num)+"/model.ckpt")
         print("Model saved in path: %s" % save_path)
+        print(learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num, split_filters)
+        resf = "results.csv"
+        with open("results/" + resf, 'a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num, split_filters))
 
         #writer.add_graph(sess.graph)
         print(sess.run(accuracy, feed_dict={x: inputData.test.images, y: inputData.test.labels}))
@@ -228,4 +234,4 @@ def create_conv_layer_for_sum(input_data, num_input_channels, num_filters, filte
 if __name__ == "__main__":
 
 
-    run_cnn(0.0001, 200, 16, tf.nn.relu, tf.nn.sigmoid, 'c', False)
+    run_cnn(0.0001, 20, 16, tf.nn.relu, tf.nn.sigmoid, 'c', False, (0, 0, 1))
