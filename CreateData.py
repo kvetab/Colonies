@@ -1,7 +1,7 @@
 # take an image + coords file, load them
 # create set amount of random squares from the image
 # count colonies in each square
-# save array (square) in one file, label in another
+# save image (square) in one file, label in another
 COORDS_DCT = "coords/"
 IMG_DCT = "photos_used/"
 
@@ -61,13 +61,15 @@ def CreateNSamples(n, imgfile, coordsf, IMG_DCT, COORDS_DCT):
         # what??
         #while x+size > h or y+size > w:
             #size = random.randint(60,240)
-        square, label, img_crop = GetSquare(img, coords, x, y, h_crop, w_crop, size)
+        square, label, img_crop = GetSquare(img, coords, x, y, h_crop, w_crop)
+        # square se pak vlastne nikde nepouzije
         #sample = square.reshape(28812)
         #samples.append(sample)
         labels.append(label)
         images.append(img_crop)
 
     SaveToFile(imgfile, samples, labels, images)
+    # samples neni potreba
 
 # loads list of coordinates
 def LoadCoords(filename, COORDS_DCT):
@@ -94,31 +96,33 @@ def LoadCoords(filename, COORDS_DCT):
 
     return coords2
 
+
+# not tested
 def CreateSpecifSample(x, y, size, imfile, coordfile):
-    coords = LoadCoords(coordfile)
+    coords = LoadCoords(coordfile, COORDS_DCT)
     img = Image.open(imfile)
     arr = np.array(img)
-    square, label = GetSquare(img, coords, x, y, size)
+    square, label, crop = GetSquare(img, coords, x, y, size, size)
     area = (x, y, x+size, y+size)
     res = img.crop(area)
     res.show()
     sample = square.reshape(28812)
-    SaveToFile(imfile, [sample], [label])
+    SaveToFile(imfile, [sample], [label], [crop])
 
-    # tady mi to hazi errory... K.
+
 
 def SaveToFile(imgfile, samples, labels, images):
-    outf = "out" + imgfile[0:-4] + ".txt"
+    #outf = "out" + imgfile[0:-4] + ".txt"
     imgf = "crop_"+ imgfile[0:-4] +"_"
-    with open(outf, 'a', newline='') as f:
-        writer = csv.writer(f)
-        for line in samples:
-            writer.writerow(line)
-    outf = "lab" + imgfile[0:-4] + ".txt"
-    with open(outf, 'a', newline='') as f:
-        writer = csv.writer(f)
-        for line in labels:
-            writer.writerow(str(line))
+    #with open(outf, 'a', newline='') as f:
+    #    writer = csv.writer(f)
+    #    for line in samples:
+    #        writer.writerow(line)
+    #outf = "lab" + imgfile[0:-4] + ".txt"
+    #with open(outf, 'a', newline='') as f:
+    #    writer = csv.writer(f)
+    #    for line in labels:
+    #        writer.writerow(str(line))
 
 
     labelsf = "labels.csv"
@@ -131,7 +135,7 @@ def SaveToFile(imgfile, samples, labels, images):
 
 
 
-def GetSquare(img, coords, x, y, h_crop, w_crop, size):
+def GetSquare(img, coords, x, y, h_crop, w_crop):
     area = (x, y, x+h_crop, y+w_crop)
     cropped_img = img.crop(area)
     cropped_img.convert('RGB')
@@ -141,7 +145,7 @@ def GetSquare(img, coords, x, y, h_crop, w_crop, size):
     count = 0
     print(x, y, x+h_crop, y+w_crop)
     res_coords = [c for c in coords if (c[0] >=x and c[0] < x + h_crop and c[1] >= y and c[1] < y + w_crop and c[2] == 1)]
-    # tady chybelo testovani pozitivni kolonie (jako zakomentovany radek 156)
+    # tady chybelo testovani pozitivni kolonie (jako zakomentovany radek 160)
     print(res_coords)
     count = len(res_coords)
     #LP: chapu to dobre tak, ze jsi nejdriv setridila coords a pak se snazis o trochu inteligentnejsi 2D filtrovani? Nejsem si jisty, co tady dela to i
@@ -164,35 +168,10 @@ def GetSquare(img, coords, x, y, h_crop, w_crop, size):
 
 
 if __name__ == "__main__":
-    ProcessDirectory(IMG_DCT, COORDS_DCT)
+    #ProcessDirectory(IMG_DCT, COORDS_DCT)
     #CreateSpecifSample(600, 135, 110, "PICT9563.png", "coords9563.csv")
+    CreateNSamples(20, "PICT9563.png", "coords9563.csv", "photos_used/", "coords/")
 
-"""
-img = Image.open("PICT9563.png")
-#area = (350, 150, 500, 300)
-#res = img.crop(area)
-#res.show()
-
-with open("coords9563.csv", 'r') as f:
-    reader = csv.reader(f)
-    coords = list(reader)
-    # loads list of coordinates
-
-for line in coords:
-    if len(line) < 1:
-        coords.remove(line)
-coords.sort(key=sortSecond)  # maybe unnecessary
-coords.sort(key=sortFirst)
-coords2 = []
-for line in coords:
-    i = float(line[0])
-    j = float(line[1])
-    k = int(line[2])
-    coords2.append((i, j, k))
-sq, c = GetSquare(img, coords2, 350, 150, 150)
-print(c)
-
-"""
 
 
 
