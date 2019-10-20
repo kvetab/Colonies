@@ -4,14 +4,17 @@ from PIL import Image
 from sklearn.model_selection import train_test_split
 #load input data from files
 
+# returns image as a numpy array
 def load_image( infilename ) :
     img = Image.open( infilename )
     img.load()
     data = np.asarray( img, dtype="int32" )
     return data
 
+# takes all image filenames from label file and loads the images
+# splits images and labels into test and train sets
+# returns input_data structure, which has next_batch function defined
 def LoadInputIMG(file_labels):
-
     labels = pd.read_csv(file_labels, header=None)
     labels.columns = ["img","label"]
     #print(labels.head())
@@ -19,7 +22,7 @@ def LoadInputIMG(file_labels):
     images = []
     for i in labels.img:
         numpy_img = load_image("crops/"+i)
-        images.append(numpy_img[:,:,0:3])#LP:hack to get rid of alpha in case of RGBA
+        images.append(numpy_img[:,:,0:3])   # LP:hack to get rid of alpha in case of RGBA
         #print(numpy_img.shape)
     np_images = np.stack(images)
     #print(np_images.shape)
@@ -71,7 +74,7 @@ def LoadInputIMG(file_labels):
 
 
 
-
+# previous version with text data instead of images
 def LoadInput(file_data, file_labels):
     data = np.genfromtxt(file_data, delimiter=",", skip_header=0)
     labels = np.genfromtxt(file_labels, delimiter=",", skip_header=0)
@@ -114,7 +117,6 @@ def LoadInput(file_data, file_labels):
         def __init__(self, xtrain, ytrain, xtest, ytest):
             self.train = set(xtrain, ytrain)
             self.test = set(xtest, ytest)
-
 
     data = input_data(X_train, y_train, X_test, y_test)
     return data
