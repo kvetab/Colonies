@@ -6,14 +6,22 @@ import math
 import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
+from datetime import datetime
 
-def run_cnn():
+def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters):
     inputData = CNNutils.LoadInputIMG("labels/labels.csv")
 
     # Python optimisation variables
-    learning_rate = 0.0001
-    epochs = 200
-    batch_size = 16
+    #learning_rate = 0.0001
+    #epochs = 20
+    #batch_size = 16
+    learning_rate = learn_rate
+    epochs = epoch_num
+    batch_size = batches
+
+    # filter number settings
+    choices = {'a': (5, 10, 15), 'b': (10, 20, 30), 'c': (15, 30, 40)}
+    (f1, f2, f3) = choices.get(filter_num, ('default1', 'default2', 'default3'))
 
     # declare the training data placeholders
     x = tf.placeholder(tf.float32, [None, 98, 98, 3])        # 98*98 plus 3 color dimensions... -> 28812
@@ -21,13 +29,20 @@ def run_cnn():
     y = tf.placeholder(tf.float32, [None, ])      #or can it be an integer??
 
     # create some convolutional layers
-    layer1, s1 = create_new_conv_layer(x, 3, 15, [5, 5], [2, 2], 1, name='layer1')
-    # input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, name
+    layer1, s1 = create_new_conv_layer(x, 3, f1, [5, 5], [2, 2], 1, outf_layer, name='layer1')
+    # input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, out_fction, name
     # input_channels is 3 because of RGB
-    layer2, s2 = create_new_conv_layer(layer1, 15, 30, [5, 5], [2, 2], 2, name='layer2')
+    if split_filters:
+        s1 = create_conv_layer_for_sum(x, 3, f1, [5, 5], 1, outf_sum, name='s_layer1')
+
+    layer2, s2 = create_new_conv_layer(layer1, f1, f2, [5, 5], [2, 2], 2, outf_layer, name='layer2')
+    if split_filters:
+        s2 = create_conv_layer_for_sum(layer1, f1, f2, [5, 5], 2, outf_sum, name='s_layer2')
 
     # another convolution added:
-    layer3, s3 = create_new_conv_layer(layer2, 30, 40, [5, 5], [1,1], 2, name='layer3')  # no pooling
+    layer3, s3 = create_new_conv_layer(layer2, f2, f3, [5, 5], [1,1], 2, outf_layer, name='layer3')  # no pooling
+    if split_filters:
+        s3 = create_conv_layer_for_sum(layer2, f2, f3, [5, 5], 2, outf_sum, name='s_layer3')
 
 
 
@@ -37,6 +52,8 @@ def run_cnn():
     # option to add different sums (all/some layers)
     error = tf.pow((y - y_pred), 2)
     err_mean = tf.sqrt(tf.reduce_mean(error))
+    abs_error = y - y_pred
+
     # add an optimiser
     optimiser = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(error)
     #changed cross_entropy to error
@@ -46,6 +63,7 @@ def run_cnn():
     #correct_prediction = tf.equal(y, y_pred)
     rmse = tf.pow((y - y_pred), 2)      # same as error
     accuracy = tf.sqrt(tf.reduce_mean(rmse))    # same as err_mean
+    abs_err_mean = tf.reduce_mean(abs_error)
 
     # setup the initialisation operator
     init_op = tf.global_variables_initializer()
@@ -57,15 +75,17 @@ def run_cnn():
         total_batch = int(len(inputData.train.labels) / batch_size)
         for epoch in range(epochs):
             avg_cost = 0
+            avg_abs_cost = 0        #added second error for gaining inf about distribution of error
             print("total_batch",total_batch)
             for i in range(total_batch):
                 batch_x, batch_y = inputData.train.next_batch(batch_size=batch_size)
-                _, c = sess.run([optimiser, err_mean], feed_dict={x: batch_x, y: batch_y})
+                _, c, err = sess.run([optimiser, err_mean, abs_err_mean], feed_dict={x: batch_x, y: batch_y})
 
                 avg_cost += c / total_batch
-            test_acc, y_solv, y_pred_solv = sess.run([accuracy, y, y_pred], feed_dict={x: inputData.test.images, y: inputData.test.labels})
+                avg_abs_cost += err / total_batch
+            test_acc, abs_test_acc, y_solv, y_pred_solv = sess.run([accuracy, abs_err_mean, y, y_pred], feed_dict={x: inputData.test.images, y: inputData.test.labels})
             #print("Epoch:", (epoch + 1), "cost =", "{:.3f}".format(avg_cost), " test accuracy:", "{:.3f}".format(test_acc))
-            print("Epoch: ", str((epoch + 1)), "cost = ", str( avg_cost), "test accuracy: ", str(test_acc))
+            print("Epoch: ", str((epoch + 1)), "cost = ", str( avg_cost), "abs cost = ", str(avg_abs_cost), "test accuracy: ", str(test_acc), "abs accuracy = ", str(abs_test_acc))
             print(list(zip(y_solv,y_pred_solv))[0:20])
 
             #if epoch % 20 == 0:
@@ -81,7 +101,9 @@ def run_cnn():
 
         print("\nTraining complete!")
         saver = tf.train.Saver()
-        save_path = saver.save(sess, "/model/model.ckpt")
+        timer = datetime.now()
+        num = timer.timestamp()
+        save_path = saver.save(sess, "models/model"+str(num)+"/model.ckpt")
         print("Model saved in path: %s" % save_path)
 
         #writer.add_graph(sess.graph)
@@ -142,8 +164,13 @@ def plotNNFilter(units, stimuli, iter, labelname):
     print("Labels saved")
 
 
+# output function variants
+def sigmoid_shifted(x):
+    x_ = (tf.nn.sigmoid(x) * 1.1) - 0.1
+    return tf.nn.relu(x_)
 
-def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, name):
+
+def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, out_fction, name):
     # setup the filter input shape for tf.nn.conv_2d
     conv_filt_shape = [filter_shape[0], filter_shape[1], num_input_channels, num_filters]
 
@@ -159,16 +186,17 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
 
     #LP: pred sectenim vystupu jsem je nechal prolozit pomoci sigmoidy - tedy da se to chapat jako pravdepodobnost,
     # ze dany filter zachytil label. Zatim nevim nakolik je tahle uprava rozumna, ale vypada to, ze to vcelku funguje
-    sigmoid_layer = tf.nn.sigmoid(out_layer) #prenasobit 1.1, odecist 0.1, pak na to aplikovat relu
+    #sigmoid_layer = tf.nn.sigmoid(out_layer)
     # ale nepouziva se pro vystup, jen pro sumu..?
 
     # apply a ReLU non-linear activation
-    out_layer = tf.nn.relu(out_layer)
+
+    out_layer = out_fction(out_layer)
 
 
     #LP: presunul jsem po aplikaci RELU
     # - tady je potreba zachovat prvni dimenzi, jinak se to snazi odhadnout velikost cele batche
-    sum_ = tf.reduce_sum(sigmoid_layer, axis=[1, 2, 3])
+    sum_ = tf.reduce_sum(out_layer, axis=[1, 2, 3])
 
     # now perform max pooling - ksize is window size
     ksize = [1, pool_shape[0], pool_shape[1], 1]
@@ -179,8 +207,25 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
     return out_layer, sum_
 
 
+def create_conv_layer_for_sum(input_data, num_input_channels, num_filters, filter_shape, stride, out_fction, name):
+
+    conv_filt_shape = [filter_shape[0], filter_shape[1], num_input_channels, num_filters]
+    weights = tf.Variable(tf.truncated_normal(conv_filt_shape, stddev=0.001), name=name + '_W')
+    bias = tf.Variable(tf.truncated_normal([num_filters]), name=name + '_b')
+
+    # setup the convolutional layer operation
+    out_layer = tf.nn.conv2d(input_data, weights, [1, stride, stride, 1], padding='VALID')
+    # add the bias
+    out_layer += bias
+
+    transformed = out_fction(out_layer)
+    sum_ = tf.reduce_sum(transformed, axis=[1, 2, 3])
+
+    return sum_
+
+
 
 if __name__ == "__main__":
 
 
-    run_cnn()
+    run_cnn(0.0001, 200, 16, tf.nn.relu, tf.nn.sigmoid, 'c', False)
