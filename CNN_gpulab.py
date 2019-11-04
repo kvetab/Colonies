@@ -1,6 +1,7 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
-from tensorflow.examples.tutorials.mnist import input_data
+
 import CNNutils
 import os
 import matplotlib
@@ -9,8 +10,12 @@ import seaborn as sns
 from datetime import datetime
 import csv
 
+
+
+
+
 def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum):
-    inputData = CNNutils.LoadInputIMG("labels/labels.csv")
+    inputData = CNNutils.LoadInputIMG("/mnt/0/labels/labels.csv")
 
     # Python optimisation variables
     #learning_rate = 0.0001
@@ -78,7 +83,7 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
         timer = datetime.now()
         num = timer.timestamp()
         now = datetime.now()
-        os.mkdir("models/model" + str(num))
+        os.mkdir("/mnt/0/models/model" + str(num))
 
         # initialise the variables
         sess.run(init_op)
@@ -104,7 +109,7 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
                 new_now = datetime.now()
                 length = new_now - now
                 now = new_now
-                with open("models/model"+str(num)+"/results.csv", 'a', newline='') as f:
+                with open("/mnt/0/models/model"+str(num)+"/results.csv", 'a', newline='') as f:
                     writer = csv.writer(f)
                     writer.writerow((epoch, avg_cost, avg_abs_cost, test_acc, abs_test_acc, length.microseconds/frequency))
                 #LP: store trained filters into an image
@@ -121,7 +126,7 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
 # SAVING NETWORK
         print("\nTraining complete!")
         saver = tf.train.Saver()
-        save_path = saver.save(sess, "models/model"+str(num)+"/model.ckpt")
+        save_path = saver.save(sess, "/mnt/0/models/model"+str(num)+"/model.ckpt")
         print("Model saved in path: %s" % save_path)
         print(learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num, split_filters)
 
@@ -130,7 +135,7 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
         print(acc)
 
         resf = "results.csv"
-        with open("results/" + resf, 'a', newline='') as f:
+        with open("/mnt/0/results/" + resf, 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num, split_filters, acc))
 
@@ -248,9 +253,8 @@ def create_conv_layer_for_sum(input_data, num_input_channels, num_filters, filte
 
     return sum_
 
-
-
 if __name__ == "__main__":
+    print("bezi kod v CNN.py")
+    run_cnn(0.0001, 20, 16, tf.nn.relu, tf.nn.sigmoid, (1, 2, 3), False, (0, 0, 1))
+    #run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum)
 
-
-    run_cnn(0.0001, 170, 16, tf.nn.sigmoid, tf.nn.sigmoid, (5, 10, 15), False, (0, 0, 1))
