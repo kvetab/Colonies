@@ -122,6 +122,16 @@ def LoadInput(file_data, file_labels):
     return data
 
 
+# loads picture and slices it into size x size tiles, returns stacked as a np array
+def load_photo(filename, size):
+    img = Image.open(filename)
+    img = img.resize((980, 980), Image.ANTIALIAS)
+    im = np.asarray(img, dtype="int32")
+    tiles = [im[x:x + size, y:y + size] for x in range(0, im.shape[0], size) for y in range(0, im.shape[1], size)]
+    np_images = np.stack(tiles)
+    return np_images
+
+
 # define inputData.train.next_batch(batch_size=batch_size)
 
 if __name__ == "__main__":
