@@ -66,10 +66,11 @@ def LoadModel(model, photo, filter_num, split_filters, which_sum, outf_l, outf_s
 
     sum = tf.reduce_sum(s3)
 
-    sum_ = sess.run(sum, feed_dict={x: inputData})
+    sum_, s_ = sess.run([sum, s3], feed_dict={x: inputData})
     print(sum_)
+    print(s_)
 
 
 if __name__ == "__main__":
-    LoadModel('model1573554663.131752', 'PICT9576.png', (10,20,30), True, (0, 1, 1), tf.nn.relu, CNN.sigmoid_ext)
+    LoadModel('model1573553160.700625', 'PICT9576.png', (10,20,30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
 
