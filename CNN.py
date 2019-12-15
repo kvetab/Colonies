@@ -11,6 +11,7 @@ import csv
 
 def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum):
     inputData = CNNutils.LoadInputIMG("labels/labels.csv")
+    #print(inputData.train.images[3])
 
     # Python optimisation variables
     #learning_rate = 0.0001
@@ -22,24 +23,25 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
 
     # filter number settings
     (f1, f2, f3) = filter_num
+    # jen 2 - 3 filtry na sumaci nebo zadavat kazde zvlast
     if split_filters:
-        (f1, f2, f3) = (int(f1/2), int(f2/2), int(f3))
+        (f1, f2, f3) = (int(f1- 3), int(f2 - 3), int(f3))
 
     # declare the training data placeholders
-    x = tf.placeholder(tf.float32, [None, 98, 98, 3])        # 98*98 plus 3 color dimensions... -> 28812
+    x = tf.placeholder(tf.float32, [None, 98, 98, 3], name='x')        # 98*98 plus 3 color dimensions... -> 28812
     # output data placeholder
-    y = tf.placeholder(tf.float32, [None, ])      #or can it be an integer??
+    y = tf.placeholder(tf.float32, [None, ], name='y')      #or can it be an integer??
 
     # create some convolutional layers
     layer1, s1 = create_new_conv_layer(x, 3, f1, [5, 5], [2, 2], 1, outf_layer, name='layer1')
     # input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, out_fction, name
     # input_channels is 3 because of RGB
     if split_filters:
-        s1 = create_conv_layer_for_sum(x, 3, f1, [5, 5], 1, outf_sum, name='s_layer1')
+        s1 = create_conv_layer_for_sum(x, 3, 3, [5, 5], 1, outf_sum, name='s_layer1')
 
     layer2, s2 = create_new_conv_layer(layer1, f1, f2, [5, 5], [2, 2], 2, outf_layer, name='layer2')
     if split_filters:
-        s2 = create_conv_layer_for_sum(layer1, f1, f2, [5, 5], 2, outf_sum, name='s_layer2')
+        s2 = create_conv_layer_for_sum(layer1, f1, 3, [5, 5], 2, outf_sum, name='s_layer2')
 
     # another convolution added:
     s3 = create_conv_layer_for_sum(layer2, f2, f3, [5, 5], 2, outf_sum, name='s_layer3')
@@ -57,9 +59,14 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
     error = tf.pow((y - y_pred), 2)
     err_mean = tf.sqrt(tf.reduce_mean(error))
     abs_error = y - y_pred
+    batch_mean = tf.reduce_mean(abs_error)
+    alpha = 0.05
+    error_w_correction = tf.pow((y - y_pred - batch_mean * alpha), 2)
 
     # add an optimiser
     optimiser = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(error)
+    # zkusit jestli je nova definice erroru lepsi
+    # zkusit ruzne hodnoty alpha napr. 0.01 nebo neco maleho
     #changed cross_entropy to error
 
     # define an accuracy assessment operation
@@ -110,6 +117,8 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
                 #LP: store trained filters into an image
                 #getActivations(sess, layer1, inputData.test.images[4:8], x, epoch, "layer1")
                 #getActivations(sess, layer2, inputData.test.images[4:8], x, epoch, "layer2")
+                #getActivations(sess, layer2, inputData.test.images[4:8], x, epoch, "layer2")
+                #getActivations(sess, s3, inputData.test.images[4:8], x, epoch, "sum3")
 
             #print(y_solv)
             #print(y_pred_solv)
@@ -125,14 +134,16 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
         print("Model saved in path: %s" % save_path)
         print(learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num, split_filters)
 
-        #writer.add_graph(sess.graph)
+        # writer.add_graph(sess.graph)
         acc = sess.run(accuracy, feed_dict={x: inputData.test.images, y: inputData.test.labels})
+        abs_test_acc = sess.run(abs_err_mean, feed_dict={x: inputData.test.images, y: inputData.test.labels})
         print(acc)
 
         resf = "results.csv"
-        with open("results/" + resf, 'a', newline='') as f:
+        with open("/mnt/0/results/" + resf, 'a', newline='') as f:
             writer = csv.writer(f)
-            writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num, split_filters, acc))
+            writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num,
+                             str(which_sum), split_filters, acc, abs_test_acc))
 
 
 def getActivations(sess, layer, stimuli, x, iter, labelname):
@@ -195,6 +206,11 @@ def sigmoid_shifted(x):
     return tf.nn.relu(x_)
 
 
+def sigmoid_ext(x):
+    x_ = (tf.nn.sigmoid(x) * 1.2) - 0.1
+    return  x_
+
+
 def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_shape, pool_shape, stride, out_fction, name):
     # setup the filter input shape for tf.nn.conv_2d
     conv_filt_shape = [filter_shape[0], filter_shape[1], num_input_channels, num_filters]
@@ -221,7 +237,7 @@ def create_new_conv_layer(input_data, num_input_channels, num_filters, filter_sh
 
     #LP: presunul jsem po aplikaci RELU
     # - tady je potreba zachovat prvni dimenzi, jinak se to snazi odhadnout velikost cele batche
-    sum_ = tf.reduce_sum(out_layer, axis=[1, 2, 3])
+    sum_ = tf.reduce_sum(out_layer, axis=[1, 2, 3], name=name+'_output')
 
     # now perform max pooling - ksize is window size
     ksize = [1, pool_shape[0], pool_shape[1], 1]
@@ -244,7 +260,7 @@ def create_conv_layer_for_sum(input_data, num_input_channels, num_filters, filte
     out_layer += bias
 
     transformed = out_fction(out_layer)
-    sum_ = tf.reduce_sum(transformed, axis=[1, 2, 3])
+    sum_ = tf.reduce_sum(transformed, axis=[1, 2, 3], name=name+'_output')
 
     return sum_
 
@@ -253,4 +269,4 @@ def create_conv_layer_for_sum(input_data, num_input_channels, num_filters, filte
 if __name__ == "__main__":
 
 
-    run_cnn(0.0001, 170, 16, tf.nn.sigmoid, tf.nn.sigmoid, (5, 10, 15), False, (0, 0, 1))
+    run_cnn(0.0001, 30, 16, tf.nn.relu, sigmoid_ext, (10,20,30), True, (0, 0, 1))

@@ -9,6 +9,8 @@ def load_image( infilename ) :
     img = Image.open( infilename )
     img.load()
     data = np.asarray( img, dtype="int32" )
+    data = data / 255
+    # scaling values to (0, 1)
     return data
 
 # takes all image filenames from label file and loads the images
@@ -127,7 +129,10 @@ def load_photo(filename, size):
     img = Image.open(filename)
     img = img.resize((980, 980), Image.ANTIALIAS)
     im = np.asarray(img, dtype="int32")
+    im = im / 255
+    # scaling values to (0, 1)
     tiles = [im[x:x + size, y:y + size] for x in range(0, im.shape[0], size) for y in range(0, im.shape[1], size)]
+    #print(tiles[3])
     np_images = np.stack(tiles)
     return np_images
 

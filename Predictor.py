@@ -34,37 +34,39 @@ def LoadModel(model, photo, filter_num, split_filters, which_sum, outf_l, outf_s
     saver = tf.train.import_meta_graph('models/' + model + '/model.ckpt.meta')
     saver.restore(sess, 'models/' + model + '/model.ckpt')
 
+    seznam = [n.name for n in tf.get_default_graph().as_graph_def().node]
+    #for i in seznam:
+        #print(i)
+
+
     inputData = CNNutils.load_photo('photos_used/'+photo, 98)
+    input_test = CNNutils.LoadInputIMG("labels/labels.csv")
 
     graph = tf.get_default_graph()
 
-    x = tf.placeholder(tf.float32, [None, 98, 98, 3])
-
-    (f1, f2, f3) = filter_num
-    if split_filters:
-        (f1, f2, f3) = (int(f1/2), int(f2/2), int(f3))
+    x = graph.get_tensor_by_name('x:0')
+    y = graph.get_tensor_by_name('y:0')
 
 
-    layer1, s1 = create_new_conv_layer(x, [2, 2], 1, outf_l, name='layer1', graph=graph)
-    if split_filters:
-        s1 = create_conv_layer_for_sum(x, 1, outf_s, name='s_layer1', graph=graph)
+    s3 = graph.get_tensor_by_name('s_layer3_output:0')
 
-    layer2, s2 = create_new_conv_layer(layer1, [2, 2], 2, outf_l, name='layer2', graph=graph)
-    if split_filters:
-        s2 = create_conv_layer_for_sum(layer1, 2, outf_s, name='s_layer2', graph=graph)
-
-    s3 = create_conv_layer_for_sum(layer2, 2, tf.nn.sigmoid, name='s_layer3', graph=graph)
-
-
-    y_pred = s3
-    for i, s in enumerate([s1, s2]):
-        if which_sum[i] == 1:
-            y_pred += s
 
 
 
 
     sum = tf.reduce_sum(s3)
+    y_pred = sum
+    """
+    abs_error = y - y_pred
+    rmse = tf.pow((y - y_pred), 2)  # same as error
+    # pri krokovani se mi zda, ze to ma jinou hodnotu nez error, ackoli se to pocita stejne
+    accuracy = tf.sqrt(tf.reduce_mean(rmse))  # same as err_mean
+    abs_err_mean = tf.reduce_mean(abs_error)
+
+    acc = sess.run(accuracy, feed_dict={x: input_test.test.images, y: input_test.test.labels})
+    abs_test_acc = sess.run(abs_err_mean, feed_dict={x: input_test.test.images, y: input_test.test.labels})
+    print(acc, abs_test_acc)
+    """
 
     sum_, s_ = sess.run([sum, s3], feed_dict={x: inputData})
     print(sum_)
@@ -72,5 +74,5 @@ def LoadModel(model, photo, filter_num, split_filters, which_sum, outf_l, outf_s
 
 
 if __name__ == "__main__":
-    LoadModel('model1573553160.700625', 'PICT9576.png', (10,20,30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
+    LoadModel('model1576328186.405176', 'PICT9576.png', (10,20,30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
 
