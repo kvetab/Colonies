@@ -1,6 +1,5 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.examples.tutorials.mnist import input_data
 import CNNutils
 import os
 import matplotlib
@@ -10,7 +9,7 @@ from datetime import datetime
 import csv
 
 def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum):
-    inputData = CNNutils.LoadInputIMG("labels/labels.csv")
+    inputData = CNNutils.LoadInputIMG("male/labels/labels.csv")
     #print(inputData.train.images[3])
 
     # Python optimisation variables
@@ -73,13 +72,15 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
     #correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     #correct_prediction = tf.equal(y, y_pred)
     rmse = tf.pow((y - y_pred), 2)      # same as error
-    # pri krokovani se mi zda, ze to ma jinou hodnotu nez error, ackoli se to pocita stejne
     accuracy = tf.sqrt(tf.reduce_mean(rmse))    # same as err_mean
     abs_err_mean = tf.reduce_mean(abs_error)
 
     # setup the initialisation operator
     init_op = tf.global_variables_initializer()
 
+
+    @tf.function
+    def evaluate_err(batch_x, batch_y)
 
     with tf.Session() as sess:
         timer = datetime.now()
@@ -131,6 +132,7 @@ def run_cnn(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, sp
         print("\nTraining complete!")
         saver = tf.train.Saver()
         save_path = saver.save(sess, "models/model"+str(num)+"/model.ckpt")
+        saver.export_meta_graph(save_path)
         print("Model saved in path: %s" % save_path)
         print(learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num, split_filters)
 
@@ -269,4 +271,4 @@ def create_conv_layer_for_sum(input_data, num_input_channels, num_filters, filte
 if __name__ == "__main__":
 
 
-    run_cnn(0.0001, 30, 16, tf.nn.relu, sigmoid_ext, (10,20,30), True, (0, 0, 1))
+    run_cnn(0.0001, 30, 16, tf.nn.relu, tf.nn.relu, (6, 10, 16), False, (0, 0, 1))
