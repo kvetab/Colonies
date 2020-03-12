@@ -46,17 +46,12 @@ def create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_nu
         if which_sum[i] == 1:
             y_pred += s
 
-    # This creates a model that includes
-    # the Input layer and three Dense layers
     model = Model(inputs=inputs, outputs=s3)
     model.compile(loss=losses.MeanSquaredError, optimizer=optimizers.Adam,
                   metrics=['root_mean_squared_error', 'mean_absolute_error'])   # jak udelat metriku, kde se vyrusi + a - error?
     return model
 
 
-model.compile(loss=keras.losses.categorical_crossentropy,
-              optimizer=keras.optimizers.SGD(lr=0.01),
-              metrics=['accuracy'])
 
 model.fit(x_train, y_train,
           batch_size=batch_size,
