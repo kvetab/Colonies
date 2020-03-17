@@ -1,4 +1,4 @@
-from tensorflow.keras.models import Model, model_from_json
+from tensorflow.keras.models import Model
 from tensorflow.keras import losses, optimizers, metrics
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D
 import tensorflow as tf
@@ -121,24 +121,6 @@ def sigmoid_ext(x):
     return  x_
 
 
-def load__model_and_predict(model_number, photo):
-    json_file = open("models/model" + model_number + "/model.json", 'r')
-    loaded_model_json = json_file.read()
-    json_file.close()
-    model = model_from_json(loaded_model_json)
-    model.load_weights("models/model" + model_number + "/model.h5")
-    graph = tf.compat.v1.get_default_graph()
-
-
-    inputData = CNNutils.load_photo('photos_used/'+photo, 98)
-
-    s3 = model.predict(inputData)
-
-    y_pred = s3
-    sum_ = tf.reduce_sum(y_pred)
-
-    print(s3)
-    print(sum_)
 
 
 if __name__ == "__main__":
@@ -152,4 +134,4 @@ if __name__ == "__main__":
     what_to_sum = (0, 0, 1)
     #model = create_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum)
     #train_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, model, "male")
-    load__model_and_predict("1584297583.088063", 'PICT9620.png')
+

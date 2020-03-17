@@ -1,7 +1,7 @@
 import tensorflow as tf
 import CNNutils
 import CNN
-
+from tensorflow.keras.models import model_from_json
 
 def create_new_conv_layer(input_data, pool_shape, stride, out_fction, name, graph):
     weights = graph.get_tensor_by_name(name+'_W:0')
@@ -94,16 +94,36 @@ def LoadModel(model, photo):
     print(sum2)
 
 
+class PredictorKeras:
+    def __init__(self, model_number):
+        json_file = open("models/model" + model_number + "/model.json", 'r')
+        loaded_model_json = json_file.read()
+        json_file.close()
+        self.model = model_from_json(loaded_model_json)
+        self.model.load_weights("models/model" + model_number + "/model.h5")
+        graph = tf.compat.v1.get_default_graph()        # Toto jsem opsala od Misi, ale nevim, k cemu to pouzivala a k cemu bych to mela pouzit ja.
+
+
+
+    def predict(self, photo):
+        inputData = CNNutils.load_photo('photos_used/'+photo, 98)
+
+        s3 = self.model.predict(inputData)
+        y_pred = s3
+        zeroes = tf.zeros_like(y_pred)
+        sum_ = tf.reduce_sum(y_pred)
+        sum_positive = tf.reduce_sum(tf.maximum(zeroes, y_pred))
+
+        print("Predictions for tiles: ", s3)
+        print("Sum for image: ", sum_)
+        print("Sum of positive numbers: ", sum_positive)
+
 
 if __name__ == "__main__":
     #LoadModel('model1580577367.772957', 'PICT9620.png')
     #LoadModel('model1580554550.725145', 'PICT9575.png', (10, 20, 30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
-    predictor = Predictor('model1580576233.108769')
-    predictor.predict_photo('PICT9620.png')
-    predictor.predict_photo("PICT9575.png")
-    predictor.predict_photo("PICT9576.png")
-    predictor.predict_photo("PICT20190924_115444.png")
-    predictor.predict_photo("PICT20190924_115646.png")
+    model = PredictorKeras("1584297583.088063")
+    model.predict('PICT9620.png')
 
 
 
