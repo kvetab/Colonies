@@ -22,15 +22,27 @@ def choose_model(event):
 
 def choose_photo(event):
     img_file = askopenfilename(initialdir=os.path.join(os.getcwd(), "photos_used"), title='Choose an image.')
+    img = Image.open(img_file)
     win2 = Toplevel(window)
-    img = Image.open('photos_used/PICT9575.png')
 
+    frame = Frame(win2, bd=2, relief=SUNKEN)
+    frame.grid_rowconfigure(0, weight=1)
+    frame.grid_columnconfigure(0, weight=1)
+    xscroll = Scrollbar(frame, orient=HORIZONTAL)
+    xscroll.grid(row=1, column=0, sticky=E + W)
+    yscroll = Scrollbar(frame)
+    yscroll.grid(row=0, column=1, sticky=N + S)
+    canvas = Canvas(frame, bd=0, xscrollcommand=xscroll.set, yscrollcommand=yscroll.set)
+    canvas.grid(row=0, column=0, sticky=N + S + E + W)
+    xscroll.config(command=canvas.xview)
+    yscroll.config(command=canvas.yview)
+    frame.pack(fill=BOTH, expand=1)
 
-
-    cv = Canvas(win2)
+    #cv = Canvas(win2)
     photo = ImageTk.PhotoImage(img)
-    cv.grid(column=0, row=0)
-    cv.create_image(50, 50, image=photo, anchor='nw')
+    #cv.grid(column=0, row=0)
+    canvas.create_image(0, 0, image=photo, anchor='nw')
+    canvas.config(scrollregion=canvas.bbox(ALL))
     win2.mainloop()
 
     """
