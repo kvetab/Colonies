@@ -37,7 +37,7 @@ def choose_photo(event):
     canvas.grid(row=0, column=0, sticky=N + S + E + W)
     xscroll.config(command=canvas.xview)
     yscroll.config(command=canvas.yview)
-    frame.pack(fill=BOTH, expand=0)
+    frame.pack(fill=BOTH, expand=1)
 
     #cv = Canvas(win2)
     photo = ImageTk.PhotoImage(img)
@@ -46,10 +46,16 @@ def choose_photo(event):
     canvas.config(scrollregion=canvas.bbox(ALL))
 
     prediction, positive = MODEL.predict(img_file, verbose=0)
-    prediction_label = Label(win2, text="Prediction is: " + str(prediction))
+    #prediction_label = Label(win2, text="Prediction is: " + str(prediction))
+    prediction_label = Label(win2, text="Prediction is: ")
     prediction_label.grid_rowconfigure(1)
-    prediction_label_pos = Label(win2, text="Prediction is: " + str(positive))
+    prediction_label.grid_columnconfigure(0)
+    prediction_label.pack()
+    #prediction_label_pos = Label(win2, text="Prediction is: " + str(positive))
+    prediction_label_pos = Label(win2, text="Prediction is: ")
     prediction_label_pos.grid_rowconfigure(2)
+    prediction_label_pos.grid_columnconfigure(0)
+    prediction_label_pos.pack()
 
 
     win2.mainloop()
