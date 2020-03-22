@@ -4,7 +4,6 @@ from Predictor import PredictorKeras
 from PIL import Image, ImageTk
 import os
 import CountDots
-from functools import partial
 
 
 DEFAULT_MODEL = "models/model1584474209.720228"
@@ -29,8 +28,6 @@ def choose_photo(event):
     win2 = Toplevel(window)
     win2.geometry('600x400')
     win2.rowconfigure(0, weight=2)
-    #win2.rowconfigure(1, weight=0)
-    #win2.rowconfigure(2, weight=0)
     win2.columnconfigure(0, weight=1)
     win2.columnconfigure(1, weight=1)
 
@@ -47,27 +44,16 @@ def choose_photo(event):
     xscroll.config(command=canvas.xview)
     yscroll.config(command=canvas.yview)
     frame.grid(column=0, row=0, sticky=N+E+W+S, columnspan=2)
-    #frame.pack(fill=BOTH, expand=1)
 
-    #cv = Canvas(win2)
     photo = ImageTk.PhotoImage(img)
-    #cv.grid(column=0, row=0)
     canvas.create_image(0, 0, image=photo, anchor='nw')
     canvas.config(scrollregion=canvas.bbox(ALL))
 
     prediction, positive = MODEL.predict(img_file, verbose=0)
     prediction_label = Label(win2, text="Prediction is: " + str(prediction), justify=LEFT, anchor=W)
-    #prediction_label = Label(win2, text="Prediction is: ")
-    #prediction_label.grid_rowconfigure(1)
-    #prediction_label.grid_columnconfigure(0)
     prediction_label.grid(column=0, row=1, sticky=W)
-    #prediction_label.pack(fill='both', side=LEFT)
 
     prediction_label_pos = Label(win2, text="Positive prediction is: " + str(positive), justify=LEFT, anchor=W)
-    #prediction_label_pos = Label(win2, text="Prediction is: ")
-    #prediction_label_pos.grid_rowconfigure(2, weight=1)
-    #prediction_label_pos.grid_columnconfigure(0)
-    #prediction_label_pos.pack(fill='both', side=BOTTOM)
     prediction_label_pos.grid(column=0, row=2, sticky=W)
 
     def count_with_args(event):
@@ -75,9 +61,6 @@ def choose_photo(event):
 
     button_count = Button(win2, text="Count manually", justify=RIGHT, anchor=E)
     button_count.bind("<Button-1>", count_with_args)
-    #button_count.grid_rowconfigure(1, weight=1)
-    #button_count.grid_columnconfigure(1)
-    #button_count.pack(fill='both', side=RIGHT)
     button_count.grid(column=1, row=1, sticky=E)
 
     win2.mainloop()
@@ -100,9 +83,6 @@ def count_manually(canvas, photo, win):
 
     button_save = Button(win, text="Save", justify=RIGHT, anchor=E)
     button_save.bind("<Button-1>", save)
-    #button_save.grid_rowconfigure(2, weight=1)
-    #button_save.grid_columnconfigure(2)
-    #button_save.pack(fill='both', side=RIGHT)
     button_save.grid(column=1, row=2, sticky=E)
 
     event2canvas = lambda e, c: (c.canvasx(e.x), c.canvasy(e.y))
