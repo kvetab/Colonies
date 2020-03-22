@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter.filedialog import askopenfilename, askdirectory
-from Predictor import PredictorKeras
+from Predictor import PredictorKeras, get_real_count
 from PIL import Image, ImageTk
 import os
 import CountDots
@@ -32,6 +32,7 @@ def choose_photo(event):
     img_file = askopenfilename(initialdir=os.path.join(os.getcwd(), "photos_used"), title='Choose an image.')
     img = Image.open(img_file)
     win2 = Toplevel(window)
+    win2.title(img_file)
     win2.geometry('600x400')
     win2.rowconfigure(0, weight=2)
     win2.columnconfigure(0, weight=1)
@@ -61,6 +62,10 @@ def choose_photo(event):
 
     prediction_label_pos = Label(win2, text="Positive prediction is: " + str(positive), justify=LEFT, anchor=W)
     prediction_label_pos.grid(column=0, row=2, sticky=W)
+
+    true = get_real_count(os.path.basename(img_file))
+    true_label = Label(win2, text="True count is: " + str(true), justify=LEFT, anchor=W)
+    true_label.grid(column=0, row=3, sticky=W)
 
     def count_with_args(event):
         count_manually(canvas, img_file, win2)
