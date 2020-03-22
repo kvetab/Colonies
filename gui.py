@@ -3,6 +3,8 @@ from tkinter.filedialog import askopenfilename, askdirectory
 from Predictor import PredictorKeras
 from PIL import Image, ImageTk
 import os
+import CountDots
+from functools import partial
 
 
 DEFAULT_MODEL = "models/model1584474209.720228"
@@ -12,6 +14,7 @@ window.title("ColonyCount")
 window.geometry('400x200')
 MODEL = PredictorKeras(DEFAULT_MODEL)
 MODEL_DIR = DEFAULT_MODEL
+colonies = 0
 
 def choose_model(event):
     global MODEL, MODEL_DIR
@@ -25,6 +28,12 @@ def choose_photo(event):
     img = Image.open(img_file)
     win2 = Toplevel(window)
     win2.geometry('600x400')
+    win2.rowconfigure(0, weight=2)
+    #win2.rowconfigure(1, weight=0)
+    #win2.rowconfigure(2, weight=0)
+    win2.columnconfigure(0, weight=1)
+    win2.columnconfigure(1, weight=1)
+
 
     frame = Frame(win2, bd=2, relief=SUNKEN)
     frame.grid_rowconfigure(0, weight=1)
@@ -37,7 +46,8 @@ def choose_photo(event):
     canvas.grid(row=0, column=0, sticky=N + S + E + W)
     xscroll.config(command=canvas.xview)
     yscroll.config(command=canvas.yview)
-    frame.pack(fill=BOTH, expand=1)
+    frame.grid(column=0, row=0, sticky=N+E+W+S, columnspan=2)
+    #frame.pack(fill=BOTH, expand=1)
 
     #cv = Canvas(win2)
     photo = ImageTk.PhotoImage(img)
@@ -46,20 +56,93 @@ def choose_photo(event):
     canvas.config(scrollregion=canvas.bbox(ALL))
 
     prediction, positive = MODEL.predict(img_file, verbose=0)
-    #prediction_label = Label(win2, text="Prediction is: " + str(prediction))
-    prediction_label = Label(win2, text="Prediction is: ")
-    prediction_label.grid_rowconfigure(1)
-    prediction_label.grid_columnconfigure(0)
-    prediction_label.pack()
-    #prediction_label_pos = Label(win2, text="Prediction is: " + str(positive))
-    prediction_label_pos = Label(win2, text="Prediction is: ")
-    prediction_label_pos.grid_rowconfigure(2)
-    prediction_label_pos.grid_columnconfigure(0)
-    prediction_label_pos.pack()
+    prediction_label = Label(win2, text="Prediction is: " + str(prediction), justify=LEFT, anchor=W)
+    #prediction_label = Label(win2, text="Prediction is: ")
+    #prediction_label.grid_rowconfigure(1)
+    #prediction_label.grid_columnconfigure(0)
+    prediction_label.grid(column=0, row=1, sticky=W)
+    #prediction_label.pack(fill='both', side=LEFT)
 
+    prediction_label_pos = Label(win2, text="Positive prediction is: " + str(positive), justify=LEFT, anchor=W)
+    #prediction_label_pos = Label(win2, text="Prediction is: ")
+    #prediction_label_pos.grid_rowconfigure(2, weight=1)
+    #prediction_label_pos.grid_columnconfigure(0)
+    #prediction_label_pos.pack(fill='both', side=BOTTOM)
+    prediction_label_pos.grid(column=0, row=2, sticky=W)
+
+    def count_with_args(event):
+        count_manually(canvas, img_file, win2)
+
+    button_count = Button(win2, text="Count manually", justify=RIGHT, anchor=E)
+    button_count.bind("<Button-1>", count_with_args)
+    #button_count.grid_rowconfigure(1, weight=1)
+    #button_count.grid_columnconfigure(1)
+    #button_count.pack(fill='both', side=RIGHT)
+    button_count.grid(column=1, row=1, sticky=E)
 
     win2.mainloop()
 
+
+def count_manually(canvas, photo, win):
+    mark_size = 3
+    mark_width = 2
+    coords = []
+    global colonies
+    colonies = 0
+
+    def save(event):
+        CountDots.SaveToFile(coords, coords_file, "coords/")
+        button_save.destroy()
+        event2canvas = None
+        canvas.bind("<ButtonPress-1>", do_nothing)
+        canvas.bind("<ButtonPress-3>", do_nothing)
+        canvas.bind_all('<ButtonPress-2>', do_nothing)
+
+    button_save = Button(win, text="Save", justify=RIGHT, anchor=E)
+    button_save.bind("<Button-1>", save)
+    #button_save.grid_rowconfigure(2, weight=1)
+    #button_save.grid_columnconfigure(2)
+    #button_save.pack(fill='both', side=RIGHT)
+    button_save.grid(column=1, row=2, sticky=E)
+
+    event2canvas = lambda e, c: (c.canvasx(e.x), c.canvasy(e.y))
+    # function to be called when mouse is clicked
+    def printcoordsPos(event):
+        # outputting x and y coords to console
+        global colonies
+        colonies += 1
+        cx, cy = event2canvas(event, canvas)
+        color = "#32b33b"
+        canvas.create_line(cx - mark_size, cy - mark_size, cx + mark_size, cy + mark_size, fill=color, width=mark_width)
+        canvas.create_line(cx - mark_size, cy + mark_size, cx + mark_size, cy - mark_size, fill=color, width=mark_width)
+        coords.append((cx, cy, 1))
+
+    def printcoordsNeg(event):
+        cx, cy = event2canvas(event, canvas)
+        canvas.create_line(cx - mark_size, cy - mark_size, cx + mark_size, cy + mark_size, fill="#ed9121",
+                           width=mark_width)
+        canvas.create_line(cx - mark_size, cy + mark_size, cx + mark_size, cy - mark_size, fill="#ed9121",
+                           width=mark_width)
+        coords.append((cx, cy, 0))
+
+    def Undo(Event=None):
+        xy = coords.pop()
+        x = xy[0]
+        y = xy[1]
+        canvas.create_oval(x - 2, y - 2, x + 2, y + 2, outline="#9400D3", fill="#9400D3")
+
+    def do_nothing(event):
+        pass
+
+    # mouseclick event
+    canvas.bind("<ButtonPress-1>", printcoordsPos)
+    canvas.bind("<ButtonPress-3>", Undo)
+    canvas.bind_all('<ButtonPress-2>', printcoordsNeg)
+
+    coords_file = os.path.basename(photo).replace("PICT", "coords")
+    coords_file = coords_file.replace("png", "csv")
+    print(coords_file)
+    coords_file = "pokus"
 
 
 label_model = Label(window, text="Current model: ")
