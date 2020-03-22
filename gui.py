@@ -10,7 +10,13 @@ DEFAULT_MODEL = "models/model1584474209.720228"
 
 window = Tk()
 window.title("ColonyCount")
-window.geometry('400x200')
+window.geometry('300x150')
+window.rowconfigure(0, weight=1)
+window.rowconfigure(1, weight=1)
+window.rowconfigure(2, weight=1)
+window.columnconfigure(1, weight=1)
+window.columnconfigure(0, weight=1)
+
 MODEL = PredictorKeras(DEFAULT_MODEL)
 MODEL_DIR = DEFAULT_MODEL
 colonies = 0
