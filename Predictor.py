@@ -1,7 +1,9 @@
 import tensorflow as tf
 import CNNutils
-import CNN
+import csv
+from tensorflow.keras import backend
 from tensorflow.keras.models import model_from_json
+from CNNkeras import sigmoid_ext
 
 def create_new_conv_layer(input_data, pool_shape, stride, out_fction, name, graph):
     weights = graph.get_tensor_by_name(name+'_W:0')
@@ -95,18 +97,20 @@ def LoadModel(model, photo):
 
 
 class PredictorKeras:
-    def __init__(self, model_number):
-        json_file = open("models/model" + model_number + "/model.json", 'r')
+    def __init__(self, model_dir):
+        json_file = open(model_dir + "/model.json", 'r')
         loaded_model_json = json_file.read()
         json_file.close()
+        self.model_number = model_dir.replace("models/model", "")
         self.model = model_from_json(loaded_model_json)
-        self.model.load_weights("models/model" + model_number + "/model.h5")
+        self.model.load_weights(model_dir + "/model.h5")
         graph = tf.compat.v1.get_default_graph()        # Toto jsem opsala od Misi, ale nevim, k cemu to pouzivala a k cemu bych to mela pouzit ja.
 
 
 
-    def predict(self, photo):
-        inputData = CNNutils.load_photo('photos_used/'+photo, 98)
+    def predict(self, photo, verbose=1):
+        # inputData = CNNutils.load_photo('photos_used/'+photo, 98)
+        inputData = CNNutils.load_photo(photo, 98)
 
         s3 = self.model.predict(inputData)
         y_pred = s3
@@ -114,16 +118,46 @@ class PredictorKeras:
         sum_ = tf.reduce_sum(y_pred)
         sum_positive = tf.reduce_sum(tf.maximum(zeroes, y_pred))
 
-        print("Predictions for tiles: ", s3)
-        print("Sum for image: ", sum_)
-        print("Sum of positive numbers: ", sum_positive)
+        if verbose:
+            print("Predictions for tiles: ", s3)
+            print("Sum for image: ", sum_)
+            print("Sum of positive numbers: ", sum_positive)
+
+        return backend.get_value(x=sum_), backend.get_value(x=sum_positive)
+
+    def test_on_image(self, filename):
+        count = get_real_count(filename)
+        prediction, positive = self.predict(filename, verbose=0)
+        print("Real count is {}".format(count))
+        print("Predicted count is {} or {}".format(prediction, positive))
+        diff = abs(count - prediction)
+        print("Difference is {}".format(diff))
+        print()
+        out_file = "predictions/pokus" + self.model_number + ".txt"
+        with open(out_file, 'a') as f:
+            f.writelines(["Count: {}; Prediction: {}; Difference: {} \n".format(count, prediction, diff)])
+
+
+def get_real_count(photo):
+    COORDS_DCT = "coords/"
+    coords_file = photo.replace("PICT","coords").replace("png","csv")
+    count = 0
+    with open(COORDS_DCT + coords_file, 'r') as f:
+        reader = csv.reader(f)
+        for line in reader:
+            if line: count += 1
+    print("Image {} contains {} colonies.".format(photo, count))
+    return count
+
+
 
 
 if __name__ == "__main__":
     #LoadModel('model1580577367.772957', 'PICT9620.png')
     #LoadModel('model1580554550.725145', 'PICT9575.png', (10, 20, 30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
-    model = PredictorKeras("1584297583.088063")
-    model.predict('PICT9620.png')
-
-
-
+    predictor = PredictorKeras("models/model" + "1584474209.720228")
+    #predictor.predict('PICT9620.png')
+    photo_list = ['PICT9620.png', 'PICT9575.png', 'PICT9563.png', 'PICT9567.png', 'PICT9612.png',
+                  'PICT20190923_150344.png', 'PICT20190923_151541.png']
+    for photo in photo_list:
+        predictor.test_on_image(photo)

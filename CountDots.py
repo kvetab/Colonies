@@ -127,7 +127,8 @@ def ShowCoords(img_file, coord_file):
 
 if __name__ == "__main__":
     colonies = 0
-    filename = "coords9621.csv"
+    filename = "odkladaci.csv"
     coords = openImage( filename)
     SaveToFile(coords, filename, "coords/")
-    #ShowCoords("PICT20190923_151150.png", "coords20190923_151150.csv")
+    #ShowCoords("PICT2.png", "coords2.csv")
+    #openImage("blah")
