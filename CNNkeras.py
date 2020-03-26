@@ -1,6 +1,6 @@
 from tensorflow.keras.models import Model
 from tensorflow.keras import losses, optimizers, metrics
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dense, Flatten, AveragePooling2D
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dense, Flatten, AveragePooling2D, concatenate, Reshape
 import tensorflow as tf
 import CNNutils
 import os
@@ -72,7 +72,7 @@ def create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_s
     convolution_1 = Conv2D(f1, kernel_size=(5, 5), strides=(1, 1), activation=outf_layer,
                            input_shape=input_shape, name='c_layer_1')(inputs)
     s1 = tf.reduce_sum(convolution_1, axis=[1, 2, 3], name='c_layer_1_sum')
-    a1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_1')(convolution_1)     # A1
+    a1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_1')(convolution_1)
     if split_filters:
         # sum "layer"
         s1 = tf.reduce_sum(Conv2D(3, kernel_size=(5, 5), strides=(1, 1), activation=outf_sum,
@@ -80,35 +80,40 @@ def create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_s
 
     a2 = AveragePooling2D(pool_size=(2, 2), strides=(2, 2))(a1)
 
+    a3 = AveragePooling2D(pool_size=(2, 2), strides=(2, 2))(a2)
+
     K = Conv2D(f2, kernel_size=(5, 5), strides=(1, 1), activation=outf_layer,
-                           input_shape=input_shape, name='c_layer_2')
+               name='c_layer_2')
+    # tady nevim, jestli nebude problem s tim input shape, protoze ten se teoreticky meni - uvidis jestli to pujde, pripadne jestli je mozne input size vynechat...
+
     v1 = K(a1)
-    pooled1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_2')(v1)
-
     v2 = K(a2)
-    pooled2 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_2')(v2)
-
-    a3 = AveragePooling2D(pool_size=(2, 2), strides=(2, 2))(pooled2)        # nebo se toto aplikuje na a2?
     v3 = K(a3)
-    pooled3 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_2')(v3)      # je to jeste potreba?
-    # scitam v1, v2, v3 nebo pooled1, 2, 3?
 
+    # scitas v1, v2, v3
+    flat1 = Flatten()(v1)
+    flat2 = Flatten()(v2)
+    flat3 = Flatten()(v3)
+    merged = concatenate([flat1, flat2, flat3])
 
     if fc:
-        flat = Flatten()(pooled3)
-        s3 = Dense(1, activation=outf_sum)(flat)  # pouzit outf_layer nebo sum? Nastavovat i neco dalsiho??
+        # tady potrebujes udelat konkatenaci v1, v2 a v3 (neco jako merged_vector = keras.layers.concatenate([encoded_a, encoded_b], axis=-1))
+        # aktivace by urcite nemela být sigmoida (ta dává výsledek mezi 0-1). Možná tady by bylo ideální použít klasické ReLU, protože mín jak nula kolonií to mít nebude...
+        s3 = Dense(1, activation=tf.keras.activations.relu)(merged)
     else:
-        s3 = tf.reduce_sum(pooled3, axis=[1, 2, 3], name='c_layer_3_sum')
+        # opet mužeš použít konkatenaci v1, v2, v3 a secíst
+        summed1 = tf.reduce_sum(v1, name='c_layer_3_sum')
+        summed2 = tf.reduce_sum(v2, name='c_layer_3_sum')
+        summed3 = tf.reduce_sum(v3, name='c_layer_3_sum')
 
-    y_pred = s3
-    for i, s in enumerate([pooled1, pooled2]):
-        if which_sum[i] == 1:
-            y_pred += s
+        s3 = summed1 + summed2 + summed3
+
+
 
     model = Model(inputs=inputs, outputs=s3)
     model.compile(loss=losses.MeanSquaredError(),
                   optimizer=optimizers.Adam(learning_rate=learn_rate, name='Adam'),
-                  metrics=[metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])   # jak udelat metriku, kde se vyrusi + a - error?
+                  metrics=[metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
 
     return model
 
@@ -126,7 +131,7 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         self.rmse.append(logs.get('root_mean_squared_error'))
         self.mae.append(logs.get('mean_absolute_error'))
-        with open("models/model" + str(self.num) + "/results.csv", 'a', newline='') as f:
+        with open("models/pokusy/model" + str(self.num) + "/results.csv", 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow((epoch, logs.get('root_mean_squared_error'), logs.get('mean_absolute_error')))
 
@@ -136,8 +141,8 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
     timer = datetime.now()
     num = timer.timestamp()
     now = datetime.now()
-    os.mkdir("models/model" + str(num))
-    save_path = ("models/model" + str(num))
+    os.mkdir("models/pokusy/model" + str(num))
+    save_path = ("models/pokusy/model" + str(num))
     history = AccuracyHistory(num)
 
     with open(save_path + "/results.csv", 'a', newline='') as f:
@@ -159,8 +164,8 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
     model.save_weights(save_path + "/model.ckpt", overwrite=False, save_format="tf")
     print("Model saved in path: %s" % save_path)
 
-    fc_string = "FC" if fc else ""
-    with open("results/results.csv", 'a', newline='') as f:
+    fc_string = "FC" if fc else "no_fc"
+    with open("results/pokusy/results.csv", 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num,
                          str(which_sum), split_filters, fc_string, history.rmse[-1]))
@@ -201,7 +206,7 @@ if __name__ == "__main__":
     filter_numbers = (6, 10, 16)
     split_filters = False
     what_to_sum = (0, 0, 1)
-    pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", True)
+    pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", False, True)
     #model = create_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum)
     #train_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, model, "male")
 
