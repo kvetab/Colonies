@@ -102,11 +102,9 @@ def create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_s
         s3 = Dense(1, activation=tf.keras.activations.relu)(merged)
     else:
         # opet mužeš použít konkatenaci v1, v2, v3 a secíst
-        summed1 = tf.reduce_sum(v1, name='c_layer_3_sum')
-        summed2 = tf.reduce_sum(v2, name='c_layer_3_sum')
-        summed3 = tf.reduce_sum(v3, name='c_layer_3_sum')
+        summed = tf.reduce_sum(merged, axis=[1])
 
-        s3 = summed1 + summed2 + summed3
+        s3 = summed
 
 
 
