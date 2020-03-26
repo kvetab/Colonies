@@ -142,10 +142,13 @@ def get_real_count(photo):
     COORDS_DCT = "coords/"
     coords_file = photo.replace("PICT","coords").replace("png","csv")
     count = 0
-    with open(COORDS_DCT + coords_file, 'r') as f:
-        reader = csv.reader(f)
-        for line in reader:
-            if line: count += 1
+    try:
+        with open(COORDS_DCT + coords_file, 'r') as f:
+            reader = csv.reader(f)
+            for line in reader:
+                if line: count += 1
+    except:
+        return "undefined"
     print("Image {} contains {} colonies.".format(photo, count))
     return count
 
@@ -155,9 +158,9 @@ def get_real_count(photo):
 if __name__ == "__main__":
     #LoadModel('model1580577367.772957', 'PICT9620.png')
     #LoadModel('model1580554550.725145', 'PICT9575.png', (10, 20, 30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
-    predictor = PredictorKeras("models/model" + "1584474209.720228")
-    #predictor.predict('PICT9620.png')
+    predictor = PredictorKeras("models/model" + "1584529644.773591")
+    predictor.predict('PICT9620.png')
     photo_list = ['PICT9620.png', 'PICT9575.png', 'PICT9563.png', 'PICT9567.png', 'PICT9612.png',
                   'PICT20190923_150344.png', 'PICT20190923_151541.png']
-    for photo in photo_list:
-        predictor.test_on_image(photo)
+    #for photo in photo_list:
+    #    predictor.test_on_image(photo)
