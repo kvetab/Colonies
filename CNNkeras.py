@@ -134,7 +134,7 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
             writer.writerow((epoch, logs.get('root_mean_squared_error'), logs.get('mean_absolute_error')))
 
 
-def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc):
+def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc, mean):
     X_train, X_test, y_train, y_test = CNNutils.load_input_data_as_np(folder+"/labels/labels.csv", folder)
     timer = datetime.now()
     num = timer.timestamp()
@@ -163,10 +163,11 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
     print("Model saved in path: %s" % save_path)
 
     fc_string = "FC" if fc else "no_fc"
+    mean_string = "mean" if mean else "max"
     with open("results/pokusy/results.csv", 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num,
-                         str(which_sum), split_filters, fc_string, history.rmse[-1]))
+                         str(which_sum), split_filters, fc_string, mean_string, history.rmse[-1]))
 
     plt.plot(range(1,epoch_num+1), history.rmse)
     plt.xlabel('Epochs')
@@ -190,7 +191,7 @@ def pipeline(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, s
         model = create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, fc)
     else:
         model = create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, fc)
-    train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc)
+    train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc, mean)
 
 
 
@@ -207,4 +208,15 @@ if __name__ == "__main__":
     pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", False, True)
     #model = create_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum)
     #train_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, model, "male")
+
+
+
+
+
+
+
+
+
+
+
 
