@@ -1,0 +1,6 @@
+Count: 204; Prediction: 100.0; Difference: 104.0 
+Count: 280; Prediction: 100.0; Difference: 180.0 
+Count: 257; Prediction: 100.0; Difference: 157.0 
+Count: 102; Prediction: 100.0; Difference: 2.0 
+Count: 207; Prediction: 100.0; Difference: 107.0 
+Count: 193; Prediction: 100.0; Difference: 93.0 
