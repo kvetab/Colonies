@@ -1,6 +1,6 @@
 from tensorflow.keras.models import Model
 from tensorflow.keras import losses, optimizers, metrics
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dense, Flatten, AveragePooling2D, concatenate, Reshape
 import tensorflow as tf
 import CNNutils
 import os
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import csv
 
 
-def create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum):
+def create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, fc):
     input_shape = (98, 98, 3)
     inputs = Input(shape=input_shape, name='image_input')       #potrebuji toto?
     # filter number settings
@@ -39,7 +39,12 @@ def create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_nu
 
     convolution_3 = Conv2D(f3, kernel_size=(5, 5), strides=(1, 1), activation=outf_sum,
                            input_shape=input_shape, name='c_layer_3')(pooling_2)
-    s3 = tf.reduce_sum(convolution_3, axis=[1, 2, 3], name='c_layer_3_sum')
+
+    if fc:
+        flat = Flatten()(convolution_3)
+        s3 = Dense(1, activation=outf_sum)(flat)  # pouzit outf_layer nebo sum? Nastavovat i neco dalsiho??
+    else:
+        s3 = tf.reduce_sum(convolution_3, axis=[1, 2, 3], name='c_layer_3_sum')
 
     y_pred = s3
     for i, s in enumerate([s1, s2]):
@@ -52,6 +57,64 @@ def create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_nu
                   metrics=[metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])   # jak udelat metriku, kde se vyrusi + a - error?
 
     return model
+
+
+def create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, fc):
+    input_shape = (98, 98, 3)
+    inputs = Input(shape=input_shape, name='image_input')       #potrebuji toto?
+    # filter number settings
+    (f1, f2, f3) = filter_num
+    # jen 3 filtry na sumaci
+    if split_filters:
+        (f1, f2, f3) = (int(f1 - 3), int(f2 - 3), int(f3))
+
+    # normal layer
+    convolution_1 = Conv2D(f1, kernel_size=(5, 5), strides=(1, 1), activation=outf_layer,
+                           input_shape=input_shape, name='c_layer_1')(inputs)
+    s1 = tf.reduce_sum(convolution_1, axis=[1, 2, 3], name='c_layer_1_sum')
+    a1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_1')(convolution_1)
+    if split_filters:
+        # sum "layer"
+        s1 = tf.reduce_sum(Conv2D(3, kernel_size=(5, 5), strides=(1, 1), activation=outf_sum,
+                           input_shape=input_shape)(inputs), name='c_layer_1_sum')
+
+    a2 = AveragePooling2D(pool_size=(2, 2), strides=(2, 2))(a1)
+
+    a3 = AveragePooling2D(pool_size=(2, 2), strides=(2, 2))(a2)
+
+    K = Conv2D(f2, kernel_size=(5, 5), strides=(1, 1), activation=outf_layer,
+               name='c_layer_2')
+    # tady nevim, jestli nebude problem s tim input shape, protoze ten se teoreticky meni - uvidis jestli to pujde, pripadne jestli je mozne input size vynechat...
+
+    v1 = K(a1)
+    v2 = K(a2)
+    v3 = K(a3)
+
+    # scitas v1, v2, v3
+    flat1 = Flatten()(v1)
+    flat2 = Flatten()(v2)
+    flat3 = Flatten()(v3)
+    merged = concatenate([flat1, flat2, flat3])
+
+    if fc:
+        # tady potrebujes udelat konkatenaci v1, v2 a v3 (neco jako merged_vector = keras.layers.concatenate([encoded_a, encoded_b], axis=-1))
+        # aktivace by urcite nemela být sigmoida (ta dává výsledek mezi 0-1). Možná tady by bylo ideální použít klasické ReLU, protože mín jak nula kolonií to mít nebude...
+        s3 = Dense(1, activation=tf.keras.activations.relu)(merged)
+    else:
+        # opet mužeš použít konkatenaci v1, v2, v3 a secíst
+        summed = tf.reduce_sum(merged, axis=[1])
+
+        s3 = summed
+
+
+
+    model = Model(inputs=inputs, outputs=s3)
+    model.compile(loss=losses.MeanSquaredError(),
+                  optimizer=optimizers.Adam(learning_rate=learn_rate, name='Adam'),
+                  metrics=[metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
+
+    return model
+
 
 class AccuracyHistory(tf.keras.callbacks.Callback):
     def __init__(self, num):
@@ -66,18 +129,18 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs={}):
         self.rmse.append(logs.get('root_mean_squared_error'))
         self.mae.append(logs.get('mean_absolute_error'))
-        with open("models/model" + str(self.num) + "/results.csv", 'a', newline='') as f:
+        with open("models/pokusy/model" + str(self.num) + "/results.csv", 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow((epoch, logs.get('root_mean_squared_error'), logs.get('mean_absolute_error')))
 
 
-def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder):
+def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc, mean):
     X_train, X_test, y_train, y_test = CNNutils.load_input_data_as_np(folder+"/labels/labels.csv", folder)
     timer = datetime.now()
     num = timer.timestamp()
     now = datetime.now()
-    os.mkdir("models/model" + str(num))
-    save_path = ("models/model" + str(num))
+    os.mkdir("models/pokusy/model" + str(num))
+    save_path = ("models/pokusy/model" + str(num))
     history = AccuracyHistory(num)
 
     with open(save_path + "/results.csv", 'a', newline='') as f:
@@ -99,10 +162,12 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
     model.save_weights(save_path + "/model.ckpt", overwrite=False, save_format="tf")
     print("Model saved in path: %s" % save_path)
 
-    with open("results/results.csv", 'a', newline='') as f:
+    fc_string = "FC" if fc else "no_fc"
+    mean_string = "mean" if mean else "max"
+    with open("results/pokusy/results.csv", 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num,
-                         str(which_sum), split_filters, history.rmse[-1]))
+                         str(which_sum), split_filters, fc_string, mean_string, history.rmse[-1]))
 
     plt.plot(range(1,epoch_num+1), history.rmse)
     plt.xlabel('Epochs')
@@ -121,6 +186,14 @@ def sigmoid_ext(x):
     return  x_
 
 
+def pipeline(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, folder, fc, mean):
+    if mean:
+        model = create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, fc)
+    else:
+        model = create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, fc)
+    train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc, mean)
+
+
 
 
 if __name__ == "__main__":
@@ -132,6 +205,18 @@ if __name__ == "__main__":
     filter_numbers = (6, 10, 16)
     split_filters = False
     what_to_sum = (0, 0, 1)
+    pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", False, True)
     #model = create_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum)
     #train_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, model, "male")
+
+
+
+
+
+
+
+
+
+
+
 
