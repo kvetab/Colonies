@@ -3,6 +3,7 @@ import CNNutils
 import csv
 from tensorflow.keras import backend
 from tensorflow.keras.models import model_from_json
+import os
 from CNNkeras import sigmoid_ext
 
 def create_new_conv_layer(input_data, pool_shape, stride, out_fction, name, graph):
@@ -110,7 +111,7 @@ class PredictorKeras:
 
     def predict(self, photo, verbose=1):
         # inputData = CNNutils.load_photo('photos_used/'+photo, 98)
-        inputData = CNNutils.load_photo(photo, 98)
+        inputData = CNNutils.load_photo("photos_used/" + photo, 98)
 
         s3 = self.model.predict(inputData)
         y_pred = s3
@@ -133,7 +134,7 @@ class PredictorKeras:
         diff = abs(count - prediction)
         print("Difference is {}".format(diff))
         print()
-        out_file = "predictions/pokus" + self.model_number + ".txt"
+        out_file = "predictions/predictions_" + self.model_number + ".txt"
         with open(out_file, 'a') as f:
             f.writelines(["Count: {}; Prediction: {}; Difference: {} \n".format(count, prediction, diff)])
 
@@ -158,9 +159,27 @@ def get_real_count(photo):
 if __name__ == "__main__":
     #LoadModel('model1580577367.772957', 'PICT9620.png')
     #LoadModel('model1580554550.725145', 'PICT9575.png', (10, 20, 30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
-    predictor = PredictorKeras("models/model" + "1584529644.773591")
-    predictor.predict('PICT9620.png')
-    photo_list = ['PICT9620.png', 'PICT9575.png', 'PICT9563.png', 'PICT9567.png', 'PICT9612.png',
-                  'PICT20190923_150344.png', 'PICT20190923_151541.png']
-    #for photo in photo_list:
-    #    predictor.test_on_image(photo)
+    photo_list = os.listdir("new_photos")
+    for model in os.listdir("models"):
+        try:
+            predictor = PredictorKeras("models/" + model)
+            for photo in photo_list:
+                predictor.test_on_image(photo)
+        except:
+            pass
+
+"""
+    predictor = PredictorKeras("models/model" + "1585480554.82895")
+    #photo_list = ['PICT9620.png', 'PICT9575.png', 'PICT9563.png', 'PICT9567.png', 'PICT9612.png',
+    #              'PICT20190923_150344.png', 'PICT20190923_151541.png']
+    for photo in photo_list:
+        predictor.test_on_image(photo)
+
+    predictor = PredictorKeras("models/model" + "1585482634.665865")
+    for photo in photo_list:
+        predictor.test_on_image(photo)
+
+    predictor = PredictorKeras("models/model" + "1585386250.530946")
+    for photo in photo_list:
+        predictor.test_on_image(photo)
+"""
