@@ -26,6 +26,18 @@ def load_input_data_as_np(label_file, folder):
     X_train, X_test, y_train, y_test = train_test_split(np_images, np_labels, test_size = 0.1, random_state = 42)
     return X_train, X_test, y_train, y_test
 
+def load_test_data():
+    labels = pd.read_csv("new_photos/labels/labels.csv", header=None)
+    labels.columns = ["img", "label"]
+    images = []
+    for i in labels.img:
+        numpy_img = load_image("new_photos/test_crops/" + i)
+        images.append(numpy_img[:, :, 0:3])  # LP:hack to get rid of alpha in case of RGBA
+        # print(numpy_img.shape)
+    np_images = np.stack(images)
+    np_labels = labels.label.to_numpy(copy=True)
+    return np_images, np_labels
+
 
 # takes all image filenames from label file and loads the images
 # splits images and labels into test and train sets
