@@ -1,4 +1,4 @@
-from tensorflow.keras.models import Model
+from tensorflow.keras.models import Model, model_from_json
 from tensorflow.keras import losses, optimizers, metrics
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dense, Flatten, AveragePooling2D, concatenate, Reshape
 import tensorflow as tf
@@ -124,6 +124,7 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
     def on_train_begin(self, logs={}):
         self.rmse = []
         self.mae = []
+        self.test_acc = 0
 
 
     def on_epoch_end(self, epoch, logs={}):
@@ -132,6 +133,7 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
         with open("models/pokusy/model" + str(self.num) + "/results.csv", 'a', newline='') as f:
             writer = csv.writer(f)
             writer.writerow((epoch, logs.get('root_mean_squared_error'), logs.get('mean_absolute_error')))
+
 
 
 def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc, mean):
@@ -155,6 +157,9 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
           validation_data=(X_test, y_test),
           callbacks=[history])
 
+    results = model.evaluate(X_test, y_test, batch_size=16)
+    print('test loss, test acc:', results)
+
     model_json = model.to_json()
     with open(save_path + "/model.json", "w") as json_file:
         json_file.write(model_json)
@@ -167,7 +172,7 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
     with open("results/pokusy/results.csv", 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num,
-                         str(which_sum), split_filters, fc_string, mean_string, history.rmse[-1]))
+                         str(which_sum), split_filters, fc_string, mean_string, results[0], results[1], results[2]))
 
     plt.plot(range(1,epoch_num+1), history.rmse)
     plt.xlabel('Epochs')
@@ -184,6 +189,26 @@ def sigmoid_shifted(x):
 def sigmoid_ext(x):
     x_ = (tf.nn.sigmoid(x) * 1.2) - 0.1
     return  x_
+
+def test_model(model_dir, learn_rate):
+    json_file = open(model_dir + "/model.json", 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    model_number = model_dir.replace("models/model", "")
+    model = model_from_json(loaded_model_json)
+    model.load_weights(model_dir + "/model.h5")
+    model.compile(loss=losses.MeanSquaredError(),
+                  optimizer=optimizers.Adam(learning_rate=learn_rate, name='Adam'),
+                  metrics=[metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
+
+    images, labels = CNNutils.load_test_data()
+
+    results = model.evaluate(images, labels, batch_size=16)
+    print('test loss, test acc:', results)
+
+    with open("results/test_results.csv", 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow((model_number, results[0], results[1], results[2]))
 
 
 def pipeline(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, folder, fc, mean):
@@ -205,9 +230,14 @@ if __name__ == "__main__":
     filter_numbers = (6, 10, 16)
     split_filters = False
     what_to_sum = (0, 0, 1)
-    pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", False, True)
+    #pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", False, True)
     #model = create_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum)
     #train_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, model, "male")
+    test_model("models/model" + "1585480554.82895", learning_rate)
+    test_model("models/model" + "1585482634.665865", learning_rate)
+    test_model("models/model" + "1585482634.665865", learning_rate)
+    test_model("models/model" + "1585734946.984284", learning_rate)
+    test_model("models/model" + "1585737032.612351", learning_rate)
 
 
 
