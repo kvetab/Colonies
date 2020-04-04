@@ -132,8 +132,8 @@ def count_manually(canvas, photo, win):
 
     coords_file = os.path.basename(photo).replace("PICT", "coords")
     coords_file = coords_file.replace("png", "csv")
+    coords_file = coords_file + "_gui_count"
     print(coords_file)
-    coords_file = "pokus"
 
 
 label_model = Label(window, text="Current model: ")
