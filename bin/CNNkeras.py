@@ -1,8 +1,8 @@
 from tensorflow.keras.models import Model, model_from_json
 from tensorflow.keras import losses, optimizers, metrics
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dense, Flatten, AveragePooling2D, concatenate, Reshape
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dense, Flatten, AveragePooling2D, concatenate
 import tensorflow as tf
-import CNNutils
+from bin import CNNutils
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -129,7 +129,7 @@ class AccuracyHistory(tf.keras.callbacks.Callback):
 
 
 def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc, mean):
-    X_train, X_test, y_train, y_test = CNNutils.load_input_data_as_np(folder+"/labels/labels.csv", folder)
+    X_train, X_test, y_train, y_test = CNNutils.load_input_data_as_np(folder + "/labels/labels.csv", folder)
     timer = datetime.now()
     num = timer.timestamp()
     now = datetime.now()
@@ -161,7 +161,7 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
 
     fc_string = "FC" if fc else "no_fc"
     mean_string = "mean" if mean else "max"
-    with open("results/pokusy/results.csv", 'a', newline='') as f:
+    with open("../results/pokusy/results.csv", 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow((num, learn_rate, epoch_num, batches, outf_layer.__name__, outf_sum.__name__, filter_num,
                          str(which_sum), split_filters, fc_string, mean_string, results[0], results[1], results[2]))
@@ -201,7 +201,7 @@ def test_model(model_dir, learn_rate):
     results = model.evaluate(images, labels, batch_size=16)
     print('test loss, test acc:', results)
 
-    with open("results/test_results.csv", 'a', newline='') as f:
+    with open("../results/test_results.csv", 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow((model_number, results[0], results[1], results[2]))
 

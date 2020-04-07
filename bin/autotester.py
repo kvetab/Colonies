@@ -1,6 +1,5 @@
-import CNN
+from bin import CNN
 import tensorflow as tf
-import numpy as np
 
 output_fctions = (tf.nn.relu, tf.nn.sigmoid, CNN.sigmoid_shifted)
 sigmoid_functions = (tf.nn.sigmoid, CNN.sigmoid_shifted)
@@ -35,7 +34,7 @@ def testFilters():
     for nums in filter_nums_:
         print()
         print("Testing " + str(nums) + " filters")
-        CNN.run_cnn(learning_rate, epochs, batch_size, tf.nn.sigmoid, tf.nn.sigmoid, nums, False, (0,0,1))
+        CNN.run_cnn(learning_rate, epochs, batch_size, tf.nn.sigmoid, tf.nn.sigmoid, nums, False, (0, 0, 1))
 
 #testFilters()
 #CNN.run_cnn(learning_rate, epochs, batch_size, tf.nn.sigmoid, tf.nn.sigmoid, (1, 2, 3), False, (0,0,1))
