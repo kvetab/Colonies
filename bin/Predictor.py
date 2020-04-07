@@ -1,10 +1,10 @@
 import tensorflow as tf
-import CNNutils
+from bin import CNNutils
 import csv
 from tensorflow.keras import backend
 from tensorflow.keras.models import model_from_json
 import os
-from CNNkeras import sigmoid_ext
+
 
 def create_new_conv_layer(input_data, pool_shape, stride, out_fction, name, graph):
     weights = graph.get_tensor_by_name(name+'_W:0')
@@ -72,7 +72,7 @@ def LoadModel(model, photo):
     #for i in seznam:
         #print(i)
 
-    inputData = CNNutils.load_photo('photos_used/'+photo, 98)
+    inputData = CNNutils.load_photo('photos_used/' + photo, 98)
     input_test = CNNutils.LoadInputIMG("male/labels/labels.csv")
 
     x = graph.get_tensor_by_name('x:0')
@@ -111,7 +111,7 @@ class PredictorKeras:
 
     def predict(self, photo, verbose=1):
         # inputData = CNNutils.load_photo('photos_used/'+photo, 98)
-        inputData = CNNutils.load_photo( photo, 98)
+        inputData = CNNutils.load_photo(photo, 98)
 
         s3 = self.model.predict(inputData)
         y_pred = s3
@@ -159,8 +159,8 @@ def get_real_count(photo):
 if __name__ == "__main__":
     #LoadModel('model1580577367.772957', 'PICT9620.png')
     #LoadModel('model1580554550.725145', 'PICT9575.png', (10, 20, 30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
-    photo_list = os.listdir("new_photos")
-    for model in os.listdir("models"):
+    photo_list = os.listdir("../new_photos")
+    for model in os.listdir("../models"):
         try:
             predictor = PredictorKeras("models/" + model)
             for photo in photo_list:

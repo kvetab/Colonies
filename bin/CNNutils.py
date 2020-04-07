@@ -2,6 +2,12 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 from sklearn.model_selection import train_test_split
+from tensorflow.keras import layers
+from tensorflow.keras.models import model_from_json
+from matplotlib import pyplot
+from tensorflow.keras.models import Model
+from matplotlib import pyplot
+import os
 #load input data from files
 
 # returns image as a numpy array
@@ -9,7 +15,35 @@ def load_image( infilename ) :
     img = Image.open( infilename )
     img.load()
     data = np.asarray( img, dtype="int32" )
+    data = data / 255
+    # scaling values to (0, 1)
     return data
+
+def load_input_data_as_np(label_file, folder):
+    labels = pd.read_csv(label_file, header=None)
+    labels.columns = ["img", "label"]
+    images = []
+    for i in labels.img:
+        numpy_img = load_image(folder+"/crops/" + i)
+        images.append(numpy_img[:, :, 0:3])  # LP:hack to get rid of alpha in case of RGBA
+        # print(numpy_img.shape)
+    np_images = np.stack(images)
+    np_labels = labels.label.to_numpy(copy=True)
+    X_train, X_test, y_train, y_test = train_test_split(np_images, np_labels, test_size = 0.1, random_state = 42)
+    return X_train, X_test, y_train, y_test
+
+def load_test_data():
+    labels = pd.read_csv("../new_photos/labels/labels.csv", header=None)
+    labels.columns = ["img", "label"]
+    images = []
+    for i in labels.img:
+        numpy_img = load_image("new_photos/test_crops/" + i)
+        images.append(numpy_img[:, :, 0:3])  # LP:hack to get rid of alpha in case of RGBA
+        # print(numpy_img.shape)
+    np_images = np.stack(images)
+    np_labels = labels.label.to_numpy(copy=True)
+    return np_images, np_labels
+
 
 # takes all image filenames from label file and loads the images
 # splits images and labels into test and train sets
@@ -21,7 +55,7 @@ def LoadInputIMG(file_labels):
 
     images = []
     for i in labels.img:
-        numpy_img = load_image("/mnt/0/crops/"+i)
+        numpy_img = load_image("male/crops/"+i)
         images.append(numpy_img[:,:,0:3])   # LP:hack to get rid of alpha in case of RGBA
         #print(numpy_img.shape)
     np_images = np.stack(images)
@@ -122,9 +156,98 @@ def LoadInput(file_data, file_labels):
     return data
 
 
-# define inputData.train.next_batch(batch_size=batch_size)
+# loads picture and slices it into size x size tiles, returns stacked as a np array
+def load_photo(filename, size):
+    img = Image.open(filename)
+    img = img.resize((980, 980), Image.ANTIALIAS)
+    im = np.asarray(img, dtype="int32")
+    im = im / 255
+    # scaling values to (0, 1)
+    tiles = [im[x:x + size, y:y + size] for x in range(0, im.shape[0], size) for y in range(0, im.shape[1], size)]
+    #print(tiles[3])
+    np_images = np.stack(tiles)
+    return np_images
+
+
+def plot_filters(model, model_dir):
+    layer = model.layers[5]
+    if type(layer) != layers.Conv2D:
+        return
+    filters, biases = layer.get_weights()
+    # normalize filter values to 0-1 so we can visualize them
+    f_min, f_max = filters.min(), filters.max()
+    filters = (filters - f_min) / (f_max - f_min)
+
+    n_filters, ix = 6, 1
+    for i in range(n_filters):
+        # get the filter
+        f = filters[:, :, :, i]
+        channels = f.shape[2]
+        # plot each channel separately
+        #ax = pyplot.subplot(n_filters, 1, ix)
+        #ax.set_xticks([])
+        #ax.set_yticks([])
+        #pyplot.imshow(f[:, :, :])
+        for j in range(channels):
+            # specify subplot and turn of axis
+            ax = pyplot.subplot(n_filters, channels, ix)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            # plot filter channel in grayscale
+            pyplot.imshow(f[:, :, j], cmap='gray')
+            ix += 1
+    # show the figure
+    fig1 = pyplot.gcf()
+    #pyplot.show()
+    fig1.savefig(model_dir + "/filters_L3.png")
+
+def plot_feature_maps(model, model_dir):
+    layer_output = model.layers[5].output
+    # Extracts the outputs of the last conv layer
+    activation_model = Model(inputs=model.input, outputs=layer_output)
+    # Creates a model that will return these outputs, given the model input
+
+    activation_model.summary()
+    # load the image with the required shape
+    data = load_photo('../photos_used/PICT9579.png', 98)
+    img = data[25,:,:,:]
+    # get feature map for first hidden layer
+    feature_maps = activation_model.predict(data)
+    # plot all 30 maps in 3x10 squares
+    num = feature_maps.shape[3]
+    cols = min(6, num//5)
+    rows = min(5, num//cols)
+    ix = 1
+    for i in range(rows):
+        for j in range(cols):
+            # specify subplot and turn of axis
+            ax = pyplot.subplot(rows, cols, ix)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            # plot filter channel in grayscale
+            pyplot.imshow(feature_maps[0, :, :, ix - 1], cmap='gray')
+            ix += 1
+    # show the figure
+    fig1 = pyplot.gcf()
+    #pyplot.show()
+    fig1.savefig(model_dir + "/feature_maps_L3.png")
+
 
 if __name__ == "__main__":
-    data = LoadInput("outPICT9563.txt", "labPICT9563.txt")
-    pokus = data.test.images
+    #data = LoadInput("outPICT9563.txt", "labPICT9563.txt")
+    #pokus = data.test.images
+    #model_dirs = os.listdir("models/klasicke/")
+    model_dirs = ["model1585478788.848749"]
+    for dir in model_dirs:
+        model_dir = "models/klasicke/" + dir
+        json_file = open(model_dir + "/model.json", 'r')
+        loaded_model_json = json_file.read()
+        json_file.close()
+        try:
+            model = model_from_json(loaded_model_json)
+            plot_feature_maps(model, model_dir)
+            plot_filters(model, model_dir)
+        except:
+            pass
+        #print(model.summary())
     i = 1

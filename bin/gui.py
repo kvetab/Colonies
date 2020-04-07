@@ -1,10 +1,9 @@
 from tkinter import *
 from tkinter.filedialog import askopenfilename, askdirectory
-from Predictor import PredictorKeras, get_real_count
+from bin.Predictor import PredictorKeras, get_real_count
 from PIL import Image, ImageTk
 import os
-import CountDots
-
+from bin import CountDots
 
 DEFAULT_MODEL = "models/model1584474209.720228"
 

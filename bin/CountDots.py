@@ -3,7 +3,8 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename
 from PIL import Image, ImageDraw
 import csv
-import CreateData
+from bin import CreateData
+
 
 #opens images, gets examples from clicks on the image
 #left click for positive, right click for negative examples, middle button for undo
