@@ -3,7 +3,7 @@
 # count colonies in each square
 # save image (square) in one file, label in another
 COORDS_DCT = "coords/"
-IMG_DCT = "photos_used/"
+IMG_DCT = "new_photos/test_crops"
 
 import numpy as np
 import csv
@@ -19,10 +19,10 @@ def sortFirst(val):
 
 def ProcessDirectory(IMG_DCT, COORDS_DCT):
     images = [f for f in os.listdir(IMG_DCT) if os.path.isfile(os.path.join(IMG_DCT, f))]
-    try:
-        os.remove("labels/labels.csv")
-    except:
-        pass
+    #try:
+    #    os.remove("labels/labels.csv")
+    #except:
+    #    pass
     for imgf in images:
         #verify whether corresponding coords file exists
         coordf = imgf.replace("PICT","coords").replace("png","csv")
@@ -126,11 +126,11 @@ def SaveToFile(imgfile, samples, labels, images):
 
 
     labelsf = "labels.csv"
-    with open("labels/"+labelsf, 'a', newline='') as f:
+    with open("new_photos/labels/"+labelsf, 'a', newline='') as f:
         writer = csv.writer(f)
         for count,img in enumerate(images):
             name = imgf + str(count) + ".png"
-            img.save("crops/"+name)
+            img.save("new_photos/test_crops/"+name)
             writer.writerow((name,str(labels[count])))
 
 
@@ -143,10 +143,10 @@ def GetSquare(img, coords, x, y, h_crop, w_crop):
     sq = np.array(im)
     i = 0
     count = 0
-    print(x, y, x+h_crop, y+w_crop)
+    #print(x, y, x+h_crop, y+w_crop)
     res_coords = [c for c in coords if (c[0] >=x and c[0] < x + h_crop and c[1] >= y and c[1] < y + w_crop and c[2] == 1)]
     # tady chybelo testovani pozitivni kolonie (jako zakomentovany radek 160)
-    print(res_coords)
+    #print(res_coords)
     count = len(res_coords)
     #LP: chapu to dobre tak, ze jsi nejdriv setridila coords a pak se snazis o trochu inteligentnejsi 2D filtrovani? Nejsem si jisty, co tady dela to i
     # - vzhledem k poctu coords mi to prijde trochu zbytecne, ale asi je to spravne, takze proc ne...
@@ -168,9 +168,9 @@ def GetSquare(img, coords, x, y, h_crop, w_crop):
 
 
 if __name__ == "__main__":
-    #ProcessDirectory(IMG_DCT, COORDS_DCT)
+    ProcessDirectory("new_photos/", COORDS_DCT)
     #CreateSpecifSample(600, 135, 110, "PICT9563.png", "coords9563.csv")
-    CreateNSamples(20, "PICT9563.png", "coords9563.csv", "photos_used/", "coords/")
+    #CreateNSamples(20, "PICT9563.png", "coords9563.csv", "photos_used/", "coords/")
 
 
 
