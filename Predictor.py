@@ -115,7 +115,7 @@ class PredictorKeras:
 
     def predict(self, photo, verbose=1):
         # inputData = CNNutils.load_photo('photos_used/'+photo, 98)
-        inputData = CNNutils.load_photo("photos_used/" + photo, 98)
+        inputData = CNNutils.load_photo( photo, 98)
 
         s3 = self.model.predict(inputData)
         y_pred = s3
