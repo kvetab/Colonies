@@ -64,19 +64,11 @@ def create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_s
     inputs = Input(shape=input_shape, name='image_input')       #potrebuji toto?
     # filter number settings
     (f1, f2, f3) = filter_num
-    # jen 3 filtry na sumaci
-    if split_filters:
-        (f1, f2, f3) = (int(f1 - 3), int(f2 - 3), int(f3))
 
     # normal layer
     convolution_1 = Conv2D(f1, kernel_size=(5, 5), strides=(1, 1), activation=outf_layer,
                            input_shape=input_shape, name='c_layer_1')(inputs)
-    s1 = tf.reduce_sum(convolution_1, axis=[1, 2, 3], name='c_layer_1_sum')
     a1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_1')(convolution_1)
-    if split_filters:
-        # sum "layer"
-        s1 = tf.reduce_sum(Conv2D(3, kernel_size=(5, 5), strides=(1, 1), activation=outf_sum,
-                           input_shape=input_shape)(inputs), name='c_layer_1_sum')
 
     a2 = AveragePooling2D(pool_size=(2, 2), strides=(2, 2))(a1)
 
@@ -157,8 +149,8 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
           validation_data=(X_test, y_test),
           callbacks=[history])
 
-    results = model.evaluate(X_test, y_test, batch_size=16)
-    print('test loss, test acc:', results)
+    results = model.evaluate(X_test, y_test, batch_size=16, verbose=0)
+    print('test loss, test rmse, test mean abs error: ', results)
 
     model_json = model.to_json()
     with open(save_path + "/model.json", "w") as json_file:
@@ -181,6 +173,9 @@ def train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num
     plt.show()
     fig1.savefig(save_path+"/plot.png")
 
+    CNNutils.plot_filters(model, save_path)
+    CNNutils.plot_feature_maps(model, save_path)
+
 def sigmoid_shifted(x):
     x_ = (tf.nn.sigmoid(x) * 1.1) - 0.1
     return tf.nn.relu(x_)
@@ -194,7 +189,7 @@ def test_model(model_dir, learn_rate):
     json_file = open(model_dir + "/model.json", 'r')
     loaded_model_json = json_file.read()
     json_file.close()
-    model_number = model_dir.replace("models/model", "")
+    model_number = model_dir.replace("models/klasicke/model", "")
     model = model_from_json(loaded_model_json)
     model.load_weights(model_dir + "/model.h5")
     model.compile(loss=losses.MeanSquaredError(),
@@ -219,8 +214,6 @@ def pipeline(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, s
     train_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, model, folder, fc, mean)
 
 
-
-
 if __name__ == "__main__":
     learning_rate = 0.0001
     epochs = 10
@@ -233,11 +226,13 @@ if __name__ == "__main__":
     #pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", False, True)
     #model = create_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum)
     #train_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, model, "male")
-    test_model("models/model" + "1585480554.82895", learning_rate)
-    test_model("models/model" + "1585482634.665865", learning_rate)
-    test_model("models/model" + "1585482634.665865", learning_rate)
-    test_model("models/model" + "1585734946.984284", learning_rate)
-    test_model("models/model" + "1585737032.612351", learning_rate)
+    #for model_dir in os.listdir("models/klasicke/"):
+    for model_dir in ["models/klasicke/model1585357905.692589"]:
+        try:
+            test_model(model_dir, learning_rate)
+        except:
+            print("skipped model number {}".format(model_dir))
+    #test_model("models/model" + "1585480554.82895", learning_rate)
 
 
 
