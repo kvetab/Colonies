@@ -4,7 +4,9 @@ import csv
 from tensorflow.keras import backend
 from tensorflow.keras.models import model_from_json
 import os
-from CNNkeras import sigmoid_ext
+from CNNkeras import test_model
+
+from CNNkeras import sigmoid_ext, sigmoid_shifted
 
 def create_new_conv_layer(input_data, pool_shape, stride, out_fction, name, graph):
     weights = graph.get_tensor_by_name(name+'_W:0')
@@ -72,7 +74,7 @@ def LoadModel(model, photo):
     #for i in seznam:
         #print(i)
 
-    inputData = CNNutils.load_photo('photos_used/'+photo, 98)
+    inputData = CNNutils.load_photo('photos_used/' + photo, 98)
     input_test = CNNutils.LoadInputIMG("male/labels/labels.csv")
 
     x = graph.get_tensor_by_name('x:0')
@@ -102,8 +104,9 @@ class PredictorKeras:
         json_file = open(model_dir + "/model.json", 'r')
         loaded_model_json = json_file.read()
         json_file.close()
-        self.model_number = model_dir.replace("models/model", "")
-        self.model = model_from_json(loaded_model_json)
+        self.model_number = model_dir.split("/")[-1]
+        self.model_number = model_dir.split("\\")[-1]
+        self.model = model_from_json(loaded_model_json, custom_objects={'sigmoid_ext': sigmoid_ext, 'sigmoid_shifted': sigmoid_shifted})
         self.model.load_weights(model_dir + "/model.h5")
         graph = tf.compat.v1.get_default_graph()        # Toto jsem opsala od Misi, ale nevim, k cemu to pouzivala a k cemu bych to mela pouzit ja.
 
@@ -133,10 +136,12 @@ class PredictorKeras:
         print("Predicted count is {} or {}".format(prediction, positive))
         diff = abs(count - prediction)
         print("Difference is {}".format(diff))
+        perc_error = diff/count * 100
+        print("Error percentage is {}".format(perc_error))
         print()
         out_file = "predictions/predictions_" + self.model_number + ".txt"
         with open(out_file, 'a') as f:
-            f.writelines(["Count: {}; Prediction: {}; Difference: {} \n".format(count, prediction, diff)])
+            f.writelines(["Count: {}; Prediction: {}; Difference: {}; Percentage of error: {} \n".format(count, prediction, diff, perc_error)])
 
 
 def get_real_count(photo):
@@ -159,27 +164,16 @@ def get_real_count(photo):
 if __name__ == "__main__":
     #LoadModel('model1580577367.772957', 'PICT9620.png')
     #LoadModel('model1580554550.725145', 'PICT9575.png', (10, 20, 30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
-    photo_list = os.listdir("new_photos")
-    for model in os.listdir("models"):
-        try:
-            predictor = PredictorKeras("models/" + model)
-            for photo in photo_list:
-                predictor.test_on_image(photo)
-        except:
-            pass
+    #photo_list = os.listdir("../new_photos")
+    learning_rate = 0.0001
+    photo_list = ['PICT9620.png', 'PICT9575.png', 'PICT9563.png', 'PICT9567.png', 'PICT9612.png',
+                  'PICT20190923_150344.png', 'PICT20190923_151541.png']
 
-"""
-    predictor = PredictorKeras("models/model" + "1585480554.82895")
-    #photo_list = ['PICT9620.png', 'PICT9575.png', 'PICT9563.png', 'PICT9567.png', 'PICT9612.png',
-    #              'PICT20190923_150344.png', 'PICT20190923_151541.png']
-    for photo in photo_list:
-        predictor.test_on_image(photo)
 
-    predictor = PredictorKeras("models/model" + "1585482634.665865")
-    for photo in photo_list:
-        predictor.test_on_image(photo)
+    higher_dir = "models/final/netsetovane"
+    for model_dir in os.listdir("models/final/netsetovane"):
+        predictor = PredictorKeras(os.path.join(higher_dir, model_dir))
+        for photo in photo_list:
+            predictor.test_on_image(photo)
 
-    predictor = PredictorKeras("models/model" + "1585386250.530946")
-    for photo in photo_list:
-        predictor.test_on_image(photo)
-"""
+
