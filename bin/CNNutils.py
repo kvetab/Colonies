@@ -3,12 +3,8 @@ import pandas as pd
 from PIL import Image
 from sklearn.model_selection import train_test_split
 from tensorflow.keras import layers
-from tensorflow.keras.models import model_from_json
-from matplotlib import pyplot
 from tensorflow.keras.models import Model
 from matplotlib import pyplot
-import os
-#load input data from files
 
 # returns image as a numpy array
 def load_image( infilename ) :
@@ -25,7 +21,7 @@ def load_input_data_as_np(label_file, folder):
     images = []
     for i in labels.img:
         numpy_img = load_image(folder+"/crops/" + i)
-        images.append(numpy_img[:, :, 0:3])  # LP:hack to get rid of alpha in case of RGBA
+        images.append(numpy_img[:, :, 0:3])
         # print(numpy_img.shape)
     np_images = np.stack(images)
     np_labels = labels.label.to_numpy(copy=True)
@@ -40,7 +36,7 @@ def load_test_data(file, folder):
     images = []
     for i in labels.img:
         numpy_img = load_image(folder + i)
-        images.append(numpy_img[:, :, 0:3])  # LP:hack to get rid of alpha in case of RGBA
+        images.append(numpy_img[:, :, 0:3])
         # print(numpy_img.shape)
     np_images = np.stack(images)
     np_labels = labels.label.to_numpy(copy=True)
@@ -53,21 +49,15 @@ def load_test_data(file, folder):
 def LoadInputIMG(file_labels):
     labels = pd.read_csv(file_labels, header=None)
     labels.columns = ["img","label"]
-    #print(labels.head())
 
     images = []
     for i in labels.img:
         numpy_img = load_image("male/crops/"+i)
         images.append(numpy_img[:,:,0:3])   # LP:hack to get rid of alpha in case of RGBA
-        #print(numpy_img.shape)
     np_images = np.stack(images)
-    #print(np_images.shape)
 
     np_labels = labels.label.to_numpy(copy=True)
     X_train, X_test, y_train, y_test = train_test_split(np_images, np_labels, test_size = 0.1, random_state = 42)
-    #test = {"images": X_test, "labels": y_test}
-    #train = {"images": X_train, "labels": y_train}
-    #data = {"train": train, "test": test}
 
     class set:
         def __init__(self, x, y):
@@ -104,55 +94,6 @@ def LoadInputIMG(file_labels):
             self.train = set(xtrain, ytrain)
             self.test = set(xtest, ytest)
 
-
-    data = input_data(X_train, y_train, X_test, y_test)
-    return data
-
-
-
-# previous version with text data instead of images
-def LoadInput(file_data, file_labels):
-    data = np.genfromtxt(file_data, delimiter=",", skip_header=0)
-    labels = np.genfromtxt(file_labels, delimiter=",", skip_header=0)
-    X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size = 0.3, random_state = 42)
-    #test = {"images": X_test, "labels": y_test}
-    #train = {"images": X_train, "labels": y_train}
-    #data = {"train": train, "test": test}
-
-    class set:
-        def __init__(self, x, y):
-            assert x.shape[0] == y.shape[0], (
-                    'images.shape: %s labels.shape: %s' % (x.shape, y.shape))
-            self._num_examples = x.shape[0]
-            self.images = x
-            self.labels = y
-            self._epochs_completed = 0
-            self._index_in_epoch = 0
-
-        def next_batch(self, batch_size):
-        # Return the next `batch_size` examples from this data set.
-        # copied from https://github.com/tensorflow/tensorflow/blob/7c36309c37b04843030664cdc64aca2bb7d6ecaa/tensorflow/contrib/learn/python/learn/datasets/mnist.py#L160
-            start = self._index_in_epoch
-            self._index_in_epoch += batch_size
-            if self._index_in_epoch > self._num_examples:
-                # Finished epoch
-                self._epochs_completed += 1
-                # Shuffle the data
-                perm = np.arange(self._num_examples)
-                np.random.shuffle(perm)
-                self.images = self.images[perm]
-                self.labels = self.labels[perm]
-                # Start next epoch
-                start = 0
-                self._index_in_epoch = batch_size
-                assert batch_size <= self._num_examples
-            end = self._index_in_epoch
-            return self.images[start:end], self.labels[start:end]
-
-    class input_data:
-        def __init__(self, xtrain, ytrain, xtest, ytest):
-            self.train = set(xtrain, ytrain)
-            self.test = set(xtest, ytest)
 
     data = input_data(X_train, y_train, X_test, y_test)
     return data
@@ -185,11 +126,6 @@ def plot_filters(model, model_dir):
         # get the filter
         f = filters[:, :, :, i]
         channels = f.shape[2]
-        # plot each channel separately
-        #ax = pyplot.subplot(n_filters, 1, ix)
-        #ax.set_xticks([])
-        #ax.set_yticks([])
-        #pyplot.imshow(f[:, :, :])
         for j in range(channels):
             # specify subplot and turn of axis
             ax = pyplot.subplot(n_filters, channels, ix)
@@ -198,9 +134,8 @@ def plot_filters(model, model_dir):
             # plot filter channel in grayscale
             pyplot.imshow(f[:, :, j], cmap='gray')
             ix += 1
-    # show the figure
+    # save the figure
     fig1 = pyplot.gcf()
-    #pyplot.show()
     fig1.savefig(model_dir + "/filters_L3.png")
 
 def plot_feature_maps(model, model_dir):
@@ -229,9 +164,8 @@ def plot_feature_maps(model, model_dir):
             # plot filter channel in grayscale
             pyplot.imshow(feature_maps[0, :, :, ix - 1], cmap='gray')
             ix += 1
-    # show the figure
+    # save the figure
     fig1 = pyplot.gcf()
-    #pyplot.show()
     fig1.savefig(model_dir + "/feature_maps_L3.png")
 
 
@@ -251,8 +185,5 @@ def get_avg_error(model_num):
 
 
 if __name__ == "__main__":
-    #data = LoadInput("outPICT9563.txt", "labPICT9563.txt")
-    #pokus = data.test.images
-    #model_dirs = os.listdir("models/klasicke/")
     model_num = "1586869164.61565"
     get_avg_error(model_num)
