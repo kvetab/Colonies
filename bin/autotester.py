@@ -36,6 +36,4 @@ def testFilters():
         print("Testing " + str(nums) + " filters")
         CNN.run_cnn(learning_rate, epochs, batch_size, tf.nn.sigmoid, tf.nn.sigmoid, nums, False, (0, 0, 1))
 
-#testFilters()
-#CNN.run_cnn(learning_rate, epochs, batch_size, tf.nn.sigmoid, tf.nn.sigmoid, (1, 2, 3), False, (0,0,1))
 TestSome()
