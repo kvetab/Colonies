@@ -1,0 +1,16 @@
+Count: 1197; Prediction: 1201.712158203125; Difference: 4.712158203125; Percentage of error: 0.393664010286132 
+Count: 115; Prediction: 104.28390502929688; Difference: 10.716094970703125; Percentage of error: 9.318343452785326 
+Count: 263; Prediction: 131.35415649414062; Difference: 131.64584350585938; Percentage of error: 50.05545380450926 
+Count: 228; Prediction: 133.02120971679688; Difference: 94.97879028320312; Percentage of error: 41.65736415929962 
+Count: 1164; Prediction: 1195.0338134765625; Difference: 31.0338134765625; Percentage of error: 2.6661351783988403 
+Count: 4; Prediction: 28.556217193603516; Difference: 24.556217193603516; Percentage of error: 613.9054298400879 
+Count: 116; Prediction: 129.79641723632812; Difference: 13.796417236328125; Percentage of error: 11.893463134765625 
+Count: 1197; Prediction: 1201.712158203125; Difference: 4.712158203125; Percentage of error: 0.393664010286132 
+Count: 115; Prediction: 104.28390502929688; Difference: 10.716094970703125; Percentage of error: 9.318343452785326 
+Count: 263; Prediction: 131.35415649414062; Difference: 131.64584350585938; Percentage of error: 50.05545380450926 
+Count: 228; Prediction: 133.02120971679688; Difference: 94.97879028320312; Percentage of error: 41.65736415929962 
+Count: 1164; Prediction: 1195.0338134765625; Difference: 31.0338134765625; Percentage of error: 2.6661351783988403 
+Count: 4; Prediction: 28.556217193603516; Difference: 24.556217193603516; Percentage of error: 613.9054298400879 
+Count: 116; Prediction: 129.79641723632812; Difference: 13.796417236328125; Percentage of error: 11.893463134765625 
+
+ Average: 104.2699790828761

@@ -1,0 +1,9 @@
+Count: 1197; Prediction: 1166.4732666015625; Difference: 30.5267333984375; Percentage of error: 2.5502701251827484 
+Count: 115; Prediction: 101.74453735351562; Difference: 13.255462646484375; Percentage of error: 11.5264892578125 
+Count: 263; Prediction: 127.70429992675781; Difference: 135.2957000732422; Percentage of error: 51.44323196701224 
+Count: 228; Prediction: 101.90196228027344; Difference: 126.09803771972656; Percentage of error: 55.30615689461691 
+Count: 1164; Prediction: 1174.1373291015625; Difference: 10.1373291015625; Percentage of error: 0.8709045619899054 
+Count: 4; Prediction: 11.840910911560059; Difference: 7.840910911560059; Percentage of error: 196.02277278900146 
+Count: 116; Prediction: 103.41331481933594; Difference: 12.586685180664062; Percentage of error: 10.850590672986261 
+
+ Average: 46.93863089551457
