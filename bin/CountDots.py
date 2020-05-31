@@ -11,7 +11,6 @@ import os
 #enter filename manually...
 def openImage(coord_dct):
     event2canvas = lambda e, c: (c.canvasx(e.x), c.canvasy(e.y))
-    # if __name__ == "__main__":
     if (True):
         root = Tk()
 
@@ -37,11 +36,6 @@ def openImage(coord_dct):
         arr = np.array(img2)
         # arr = arr.astype(int)
 
-
-#        num = input('Enter image number.')
-#        imgnum = int(num)
-#        posneg = input('Positive or negative examples? 1/0')
-#        example = int(posneg)
         coords = []
 
         print(arr.shape)
@@ -55,7 +49,6 @@ def openImage(coord_dct):
 
         basename = os.path.basename(File)
         coord_file = basename.replace("PICT", "coords").replace("png", "csv")
-        #coord_file = "coords9575.csv"
         try:
             coord_list = CreateData.LoadCoords(coord_file, coord_dct)
             for c in coord_list:
@@ -109,15 +102,10 @@ def SaveToFile(col, filename, dct):
             writer.writerow(line)
 
 def ShowCoords(img_file, coord_file):
-    # root = Tk()
-    # File = askopenfilename(parent=root, initialdir="M:/", title='Choose an image.')
-    # print("opening %s" % File)
-    # img = PhotoImage(file=File)
     IMG_DCT = "photos_used/"
     img = Image.open(IMG_DCT + img_file)
     draw = ImageDraw.Draw(img)
     COORDS_DCT = "coords/"
-    #COORDS_DCT = ""
     coord_list = CreateData.LoadCoords(coord_file, COORDS_DCT)
     for c in coord_list:
         if c[2] == 1:
@@ -135,5 +123,3 @@ if __name__ == "__main__":
     coords, filename = openImage( coords_dct)
     if len(coords) > 0:
         SaveToFile(coords, filename, coords_dct)
-    #ShowCoords("PICT2.png", "coords2.csv")
-    #openImage("blah")
