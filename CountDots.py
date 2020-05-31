@@ -4,11 +4,12 @@ from tkinter.filedialog import askopenfilename
 from PIL import Image, ImageDraw
 import csv
 import CreateData
+import os
 
 #opens images, gets examples from clicks on the image
 #left click for positive, right click for negative examples, middle button for undo
 #enter filename manually...
-def openImage(coord_file):
+def openImage(coord_dct):
     event2canvas = lambda e, c: (c.canvasx(e.x), c.canvasy(e.y))
     # if __name__ == "__main__":
     if (True):
@@ -52,10 +53,11 @@ def openImage(coord_file):
         mark_size = 3
         mark_width = 2
 
-        #coord_file = File.replace("PICT", "coords").replace("png", "csv")
+        basename = os.path.basename(File)
+        coord_file = basename.replace("PICT", "coords").replace("png", "csv")
         #coord_file = "coords9575.csv"
         try:
-            coord_list = CreateData.LoadCoords(coord_file, "coords/")
+            coord_list = CreateData.LoadCoords(coord_file, coord_dct)
             for c in coord_list:
                 x = c[0]
                 y = c[1]
@@ -87,6 +89,8 @@ def openImage(coord_file):
             x = xy[0]
             y = xy[1]
             canvas.create_oval(x-2, y-2, x+2, y+2, outline="#9400D3", fill="#9400D3")
+            global colonies
+            colonies -= 1
 
         # mouseclick event
         canvas.bind("<ButtonPress-1>", printcoordsPos)
@@ -96,7 +100,7 @@ def openImage(coord_file):
     root.mainloop()
 
     print(colonies)
-    return coords
+    return coords, coord_file
 
 def SaveToFile(col, filename, dct):
     with open(dct+filename, 'a') as f:
@@ -127,8 +131,9 @@ def ShowCoords(img_file, coord_file):
 
 if __name__ == "__main__":
     colonies = 0
-    filename = "odkladaci.csv"
-    coords = openImage( filename)
-    SaveToFile(coords, filename, "coords/")
+    coords_dct = "coords/"
+    coords, filename = openImage( coords_dct)
+    if len(coords) > 0:
+        SaveToFile(coords, filename, coords_dct)
     #ShowCoords("PICT2.png", "coords2.csv")
     #openImage("blah")

@@ -196,7 +196,7 @@ def test_model(model_dir, learn_rate):
                   optimizer=optimizers.Adam(learning_rate=learn_rate, name='Adam'),
                   metrics=[metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
 
-    images, labels = CNNutils.load_test_data()
+    images, labels = CNNutils.load_test_data("new_photos/labels/labels.csv", "new_photos/test_crops/")
 
     results = model.evaluate(images, labels, batch_size=16)
     print('test loss, test acc:', results)

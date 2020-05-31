@@ -32,12 +32,14 @@ def load_input_data_as_np(label_file, folder):
     X_train, X_test, y_train, y_test = train_test_split(np_images, np_labels, test_size = 0.1, random_state = 42)
     return X_train, X_test, y_train, y_test
 
-def load_test_data():
-    labels = pd.read_csv("new_photos/labels/labels.csv", header=None)
+
+
+def load_test_data(file, folder):
+    labels = pd.read_csv(file, header=None)
     labels.columns = ["img", "label"]
     images = []
     for i in labels.img:
-        numpy_img = load_image("new_photos/test_crops/" + i)
+        numpy_img = load_image(folder + i)
         images.append(numpy_img[:, :, 0:3])  # LP:hack to get rid of alpha in case of RGBA
         # print(numpy_img.shape)
     np_images = np.stack(images)
@@ -233,21 +235,24 @@ def plot_feature_maps(model, model_dir):
     fig1.savefig(model_dir + "/feature_maps_L3.png")
 
 
+def get_avg_error(model_num):
+    err = 0
+    count = 0
+    filename = "predictions/predictions_model" + model_num + ".txt"
+    with open(filename, "r") as file:
+        for line in file:
+            last = line.rstrip().split(" ")[-1]
+            error = float(last)
+            count += 1
+            err += error
+    err = err / count
+    with open(filename, "a") as file:
+        file.write("\n Average: {}".format(err))
+
+
 if __name__ == "__main__":
     #data = LoadInput("outPICT9563.txt", "labPICT9563.txt")
     #pokus = data.test.images
     #model_dirs = os.listdir("models/klasicke/")
-    model_dirs = ["model1585478788.848749"]
-    for dir in model_dirs:
-        model_dir = "models/klasicke/" + dir
-        json_file = open(model_dir + "/model.json", 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
-        try:
-            model = model_from_json(loaded_model_json)
-            plot_feature_maps(model, model_dir)
-            plot_filters(model, model_dir)
-        except:
-            pass
-        #print(model.summary())
-    i = 1
+    model_num = "1586869164.61565"
+    get_avg_error(model_num)

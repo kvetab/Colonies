@@ -20,14 +20,15 @@ def sortFirst(val):
 def ProcessDirectory(IMG_DCT, COORDS_DCT):
     images = [f for f in os.listdir(IMG_DCT) if os.path.isfile(os.path.join(IMG_DCT, f))]
     try:
-        os.remove("labels/labels.csv")
+        #os.remove("labels/labels.csv")
+        i = 0
     except:
         pass
     for imgf in images:
         #verify whether corresponding coords file exists
         coordf = imgf.replace("PICT","coords").replace("png","csv")
         if os.path.isfile(os.path.join(COORDS_DCT, coordf)):
-            CreateNSamples(500, imgf, coordf, IMG_DCT, COORDS_DCT)
+            CreateNSamples(250, imgf, coordf, IMG_DCT, COORDS_DCT)
 
 def CreateNSamples(n, imgfile, coordsf, IMG_DCT, COORDS_DCT):
     coords = LoadCoords(coordsf, COORDS_DCT)
@@ -126,11 +127,11 @@ def SaveToFile(imgfile, samples, labels, images):
 
 
     labelsf = "labels.csv"
-    with open("labels/"+labelsf, 'a', newline='') as f:
+    with open("new_photos/labels/"+labelsf, 'a', newline='') as f:
         writer = csv.writer(f)
         for count,img in enumerate(images):
             name = imgf + str(count) + ".png"
-            img.save("crops/"+name)
+            img.save("new_photos/test_crops/"+name)
             writer.writerow((name,str(labels[count])))
 
 
@@ -168,9 +169,9 @@ def GetSquare(img, coords, x, y, h_crop, w_crop):
 
 
 if __name__ == "__main__":
-    #ProcessDirectory(IMG_DCT, COORDS_DCT)
+    ProcessDirectory("new_photos/", COORDS_DCT)
     #CreateSpecifSample(600, 135, 110, "PICT9563.png", "coords9563.csv")
-    CreateNSamples(20, "PICT9563.png", "coords9563.csv", "photos_used/", "coords/")
+    #CreateNSamples(20, "PICT9563.png", "coords9563.csv", "photos_used/", "coords/")
 
 
 

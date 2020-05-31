@@ -1,16 +1,16 @@
 from tkinter import *
-from tkinter.filedialog import askopenfilename, askdirectory
+from tkinter.filedialog import askopenfilename, askdirectory, asksaveasfilename
 from Predictor import PredictorKeras, get_real_count
 from PIL import Image, ImageTk
 import os
 import CountDots
 
 
-DEFAULT_MODEL = "models/model1584474209.720228"
+DEFAULT_MODEL = "models/klasicke/model1584474209.720228"
 
 window = Tk()
 window.title("ColonyCount")
-window.geometry('300x150')
+window.geometry('400x200')
 window.rowconfigure(0, weight=1)
 window.rowconfigure(1, weight=1)
 window.rowconfigure(2, weight=1)
@@ -85,7 +85,8 @@ def count_manually(canvas, photo, win):
     colonies = 0
 
     def save(event):
-        CountDots.SaveToFile(coords, coords_file, "coords/")
+        filename = asksaveasfilename(initialdir="coords/", initialfile=coords_file, defaultextension='.csv')
+        CountDots.SaveToFile(coords, filename, "")
         button_save.destroy()
         event2canvas = None
         canvas.bind("<ButtonPress-1>", do_nothing)
@@ -131,9 +132,8 @@ def count_manually(canvas, photo, win):
     canvas.bind_all('<ButtonPress-2>', printcoordsNeg)
 
     coords_file = os.path.basename(photo).replace("PICT", "coords")
-    coords_file = coords_file.replace("png", "csv")
+    coords_file = coords_file.replace(".png", "")
     coords_file = coords_file + "_gui_count"
-    print(coords_file)
 
 
 label_model = Label(window, text="Current model: ")

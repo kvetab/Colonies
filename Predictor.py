@@ -104,8 +104,9 @@ class PredictorKeras:
         json_file = open(model_dir + "/model.json", 'r')
         loaded_model_json = json_file.read()
         json_file.close()
+        self.model_dir = model_dir
         self.model_number = model_dir.split("/")[-1]
-        self.model_number = model_dir.split("\\")[-1]
+        self.model_number = self.model_number.split("\\")[-1]
         self.model = model_from_json(loaded_model_json, custom_objects={'sigmoid_ext': sigmoid_ext, 'sigmoid_shifted': sigmoid_shifted})
         self.model.load_weights(model_dir + "/model.h5")
         graph = tf.compat.v1.get_default_graph()        # Toto jsem opsala od Misi, ale nevim, k cemu to pouzivala a k cemu bych to mela pouzit ja.
@@ -128,6 +129,20 @@ class PredictorKeras:
             print("Sum of positive numbers: ", sum_positive)
 
         return backend.get_value(x=sum_), backend.get_value(x=sum_positive)
+
+    def evaluation(self, data_folder):
+        input_data, labels = CNNutils.load_test_data(data_folder + "/labels/labels.csv", data_folder + "/test_crops/")
+        prediction = self.model.predict(input_data)
+        prediction = tf.keras.backend.eval(prediction)
+        prediction = prediction.flatten()
+        differences = prediction - labels
+        with open(os.path.join(self.model_dir, "eval.txt"), "a") as outfile:
+            for i in range(len(labels)):
+                outstr = f"i: {i}; label: {labels[i]}; pred: {prediction[i]}, error: {differences[i]} \n"
+                outfile.write(outstr)
+        with open(os.path.join(self.model_dir, "diffs.txt"), "a") as outfile:
+            for diff in differences:
+                outfile.write(str(diff) + "\n")
 
     def test_on_image(self, filename):
         count = get_real_count(filename)
@@ -168,12 +183,12 @@ if __name__ == "__main__":
     learning_rate = 0.0001
     photo_list = ['PICT9620.png', 'PICT9575.png', 'PICT9563.png', 'PICT9567.png', 'PICT9612.png',
                   'PICT20190923_150344.png', 'PICT20190923_151541.png']
+    #model_dir = "models/final/model1586867091.497158"
+    #predictor = PredictorKeras(model_dir)
+    #predictor.evaluation("new_photos")
 
 
-    higher_dir = "models/final/netsetovane"
-    for model_dir in os.listdir("models/final/netsetovane"):
-        predictor = PredictorKeras(os.path.join(higher_dir, model_dir))
-        for photo in photo_list:
-            predictor.test_on_image(photo)
-
+    for dir in os.listdir("models/dodatek"):
+        predictor = PredictorKeras("models/dodatek/" + dir)
+        predictor.evaluation("new_photos")
 
