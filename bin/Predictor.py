@@ -49,11 +49,8 @@ class Predictor:
         zeroes = tf.zeros_like(self.y_pred)
         self.sum_pos = tf.reduce_sum(tf.maximum(zeroes, self.y_pred))
 
-        abs_error = y - self.y_pred
 
         rmse = tf.pow((y - self.y_pred), 2)  # same as error
-        accuracy = tf.sqrt(tf.reduce_mean(rmse))  # same as err_mean
-        abs_err_mean = tf.reduce_mean(abs_error)
 
     def predict_photo(self, filename):
         tiles = CNNutils.load_photo('photos_used/' + filename, 98)
@@ -71,8 +68,6 @@ def LoadModel(model, photo):
     saver.restore(sess, 'models/' + model + '/model.ckpt')
 
     seznam = [n.name for n in tf.get_default_graph().as_graph_def().node]
-    #for i in seznam:
-        #print(i)
 
     inputData = CNNutils.load_photo('photos_used/' + photo, 98)
     input_test = CNNutils.LoadInputIMG("male/labels/labels.csv")
@@ -86,14 +81,6 @@ def LoadModel(model, photo):
     y_pred = s3
     sum_ = tf.reduce_sum(y_pred)
 
-    abs_error = y - y_pred
-
-    rmse = tf.pow((y - y_pred), 2)  # same as error
-    accuracy = tf.sqrt(tf.reduce_mean(rmse))  # same as err_mean
-    abs_err_mean = tf.reduce_mean(abs_error)
-
-    #acc, abs_test_acc, predsum, pred = sess.run([accuracy, abs_err_mean, y_pred, s3], feed_dict={x: input_test.test.images, y: input_test.test.labels})
-    #print(acc, abs_test_acc)
     pred, sum2 = sess.run([y_pred, sum_], feed_dict={x: inputData})
     print(pred)
     print(sum2)
@@ -109,12 +96,10 @@ class PredictorKeras:
         self.model_number = self.model_number.split("\\")[-1]
         self.model = model_from_json(loaded_model_json, custom_objects={'sigmoid_ext': sigmoid_ext, 'sigmoid_shifted': sigmoid_shifted})
         self.model.load_weights(model_dir + "/model.h5")
-        graph = tf.compat.v1.get_default_graph()        # Toto jsem opsala od Misi, ale nevim, k cemu to pouzivala a k cemu bych to mela pouzit ja.
 
 
 
     def predict(self, photo, verbose=1):
-        # inputData = CNNutils.load_photo('photos_used/'+photo, 98)
         inputData = CNNutils.load_photo( photo, 98)
 
         s3 = self.model.predict(inputData)
@@ -177,17 +162,9 @@ def get_real_count(photo):
 
 
 if __name__ == "__main__":
-    #LoadModel('model1580577367.772957', 'PICT9620.png')
-    #LoadModel('model1580554550.725145', 'PICT9575.png', (10, 20, 30), True, (0, 0, 1), tf.nn.relu, CNN.sigmoid_ext)
-    #photo_list = os.listdir("../new_photos")
     learning_rate = 0.0001
     photo_list = ['PICT9620.png', 'PICT9575.png', 'PICT9563.png', 'PICT9567.png', 'PICT9612.png',
                   'PICT20190923_150344.png', 'PICT20190923_151541.png']
-    #model_dir = "models/final/model1586867091.497158"
-    #predictor = PredictorKeras(model_dir)
-    #predictor.evaluation("new_photos")
-
-
     for dir in os.listdir("models/dodatek"):
         predictor = PredictorKeras("models/dodatek/" + dir)
         predictor.evaluation("new_photos")
