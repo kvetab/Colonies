@@ -11,17 +11,16 @@ import csv
 
 def create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, fc):
     input_shape = (98, 98, 3)
-    inputs = Input(shape=input_shape, name='image_input')       #potrebuji toto?
+    inputs = Input(shape=input_shape, name='image_input')
     # filter number settings
     (f1, f2, f3) = filter_num
-    # jen 3 filtry na sumaci
+    # 3 filters for summing
     if split_filters:
         (f1, f2, f3) = (int(f1 - 3), int(f2 - 3), int(f3))
 
     # normal layer
     convolution_1 = Conv2D(f1, kernel_size=(5, 5), strides=(1, 1), activation=outf_layer,
                            input_shape=input_shape, name='c_layer_1')(inputs)
-    # zadne weights? zadny bias?
     s1 = tf.reduce_sum(convolution_1, axis=[1, 2, 3], name='c_layer_1_sum')
     pooling_1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_1')(convolution_1)
     if split_filters:
@@ -42,7 +41,7 @@ def create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_nu
 
     if fc:
         flat = Flatten()(convolution_3)
-        s3 = Dense(1, activation=outf_sum)(flat)  # pouzit outf_layer nebo sum? Nastavovat i neco dalsiho??
+        s3 = Dense(1, activation=outf_sum)(flat)
     else:
         s3 = tf.reduce_sum(convolution_3, axis=[1, 2, 3], name='c_layer_3_sum')
 
@@ -54,18 +53,17 @@ def create_model(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_nu
     model = Model(inputs=inputs, outputs=s3)
     model.compile(loss=losses.MeanSquaredError(),
                   optimizer=optimizers.Adam(learning_rate=learn_rate, name='Adam'),
-                  metrics=[metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])   # jak udelat metriku, kde se vyrusi + a - error?
+                  metrics=[metrics.RootMeanSquaredError(), metrics.MeanAbsoluteError()])
 
     return model
 
 
 def create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_sum, filter_num, split_filters, which_sum, fc):
     input_shape = (98, 98, 3)
-    inputs = Input(shape=input_shape, name='image_input')       #potrebuji toto?
+    inputs = Input(shape=input_shape, name='image_input')
     # filter number settings
     (f1, f2, f3) = filter_num
 
-    # normal layer
     convolution_1 = Conv2D(f1, kernel_size=(5, 5), strides=(1, 1), activation=outf_layer,
                            input_shape=input_shape, name='c_layer_1')(inputs)
     a1 = MaxPooling2D(pool_size=(2, 2), strides=(2, 2), name='p_layer_1')(convolution_1)
@@ -76,24 +74,19 @@ def create_model_mean_pooling(learn_rate, epoch_num, batches, outf_layer, outf_s
 
     K = Conv2D(f2, kernel_size=(5, 5), strides=(1, 1), activation=outf_layer,
                name='c_layer_2')
-    # tady nevim, jestli nebude problem s tim input shape, protoze ten se teoreticky meni - uvidis jestli to pujde, pripadne jestli je mozne input size vynechat...
 
     v1 = K(a1)
     v2 = K(a2)
     v3 = K(a3)
 
-    # scitas v1, v2, v3
     flat1 = Flatten()(v1)
     flat2 = Flatten()(v2)
     flat3 = Flatten()(v3)
     merged = concatenate([flat1, flat2, flat3])
 
     if fc:
-        # tady potrebujes udelat konkatenaci v1, v2 a v3 (neco jako merged_vector = keras.layers.concatenate([encoded_a, encoded_b], axis=-1))
-        # aktivace by urcite nemela být sigmoida (ta dává výsledek mezi 0-1). Možná tady by bylo ideální použít klasické ReLU, protože mín jak nula kolonií to mít nebude...
         s3 = Dense(1, activation=tf.keras.activations.relu)(merged)
     else:
-        # opet mužeš použít konkatenaci v1, v2, v3 a secíst
         summed = tf.reduce_sum(merged, axis=[1])
 
         s3 = summed
@@ -223,16 +216,8 @@ if __name__ == "__main__":
     filter_numbers = (6, 10, 16)
     split_filters = False
     what_to_sum = (0, 0, 1)
-    #pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", False, True)
-    #model = create_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum)
-    #train_model(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, model, "male")
-    #for model_dir in os.listdir("models/klasicke/"):
-    for model_dir in ["models/klasicke/model1585357905.692589"]:
-        try:
-            test_model(model_dir, learning_rate)
-        except:
-            print("skipped model number {}".format(model_dir))
-    #test_model("models/model" + "1585480554.82895", learning_rate)
+    pipeline(learning_rate, epochs, batch_size, outf_layer, outf_sum, filter_numbers, split_filters, what_to_sum, "male", False, True)
+
 
 
 
