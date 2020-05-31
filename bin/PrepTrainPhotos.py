@@ -9,11 +9,8 @@ directory = r"C:\Users\Kiki\PycharmProjects\ColonyCount\fotky\\"
 
 def ChangeImage(filename):
     im = Image.open(filename)
-    #area = (400, 400, 800, 800)
-    #cropped_img = im.crop(area)
     img = im.resize((w, h), PIL.Image.ANTIALIAS)
     img.save(filename[0:-4]+".png", "PNG")
-    #print(filename[0:-4]+".png")
     im.close()
 
 def ChangeDir():
