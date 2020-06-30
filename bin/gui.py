@@ -6,7 +6,7 @@ import os
 import CountDots
 
 
-DEFAULT_MODEL = "models/klasicke/model1584474209.720228"
+DEFAULT_MODEL = "../models/klasicke/model1584474209.720228"
 
 window = Tk()
 window.title("ColonyCount")
@@ -19,14 +19,24 @@ window.columnconfigure(0, weight=1)
 
 MODEL = PredictorKeras(DEFAULT_MODEL)
 MODEL_DIR = DEFAULT_MODEL
+text = os.path.basename(MODEL_DIR)
 colonies = 0
 
+
+label_model = Label(window, text="Current model: ")
+label_model.grid(column=0, row=0)
+
+label_model_number = Label(window, text=text)
+label_model_number.grid(column=1, row=0)
+
 def choose_model(event):
-    global MODEL, MODEL_DIR
+    global MODEL, MODEL_DIR, label_model_number
     model_dir = askdirectory(initialdir=os.getcwd()+"/models", title='Choose a model directory.', mustexist=True)
     if model_dir:
         MODEL = PredictorKeras(model_dir)
         MODEL_DIR = model_dir
+        text = os.path.basename(MODEL_DIR)
+        label_model_number['text'] = text
 
 def choose_photo(event):
     img_file = askopenfilename(initialdir=os.path.join(os.getcwd(), "photos_used"), title='Choose an image.')
@@ -136,11 +146,7 @@ def count_manually(canvas, photo, win):
     coords_file = coords_file + "_gui_count"
 
 
-label_model = Label(window, text="Current model: ")
-label_model.grid(column=0, row=0)
 
-label_model_number = Label(window, text=MODEL_DIR)
-label_model_number.grid(column=1, row=0)
 
 button_model = Button(window, text="Choose model")
 button_model.bind("<Button-1>", choose_model)
